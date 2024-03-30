@@ -476,7 +476,7 @@ class LitDDPM(pl.LightningModule):
         self.save_hyperparameters()
 
     def forward(self, x):
-        for torch in range(self.diffusion_steps):
+        for t in range(self.diffusion_steps-1):
             x = self.model(x, torch.tensor([t] * x.shape[0]))
         return x
 
@@ -495,7 +495,7 @@ class LitDDPM(pl.LightningModule):
 
         self.log("train_loss", total_loss, on_step=True, prog_bar=True)
 
-        if batch_idx % 10 == 0:
+        if batch_idx % 20 == 0:
             noise = torch.randn_like(x)
             generated = self.forward(x)
             grid = torchvision.utils.make_grid(generated)
