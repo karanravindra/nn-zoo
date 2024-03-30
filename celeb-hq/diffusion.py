@@ -1,4 +1,3 @@
-from lightning.pytorch.utilities.types import TRAIN_DATALOADERS
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -11,7 +10,7 @@ import wandb
 def noiser(img, noise, step, steps):
     """returns a noisy image"""
 
-    noise_scale = 1 - step / (steps - 1)
+    noise_scale = step / (steps - 1)
     return img * (noise_scale) + noise * (1 - noise_scale)
 
 
@@ -477,8 +476,8 @@ class LitDDPM(pl.LightningModule):
         self.save_hyperparameters()
 
     def forward(self, x):
-        for _ in range(self.diffusion_steps):
-            x = self.model(x, torch.tensor([0] * x.shape[0]))
+        for torch in range(self.diffusion_steps):
+            x = self.model(x, torch.tensor([t] * x.shape[0]))
         return x
 
     def training_step(self, batch, batch_idx):
@@ -508,7 +507,7 @@ class LitDDPM(pl.LightningModule):
         return total_loss
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.model.parameters(), lr=1e-4)
+        return torch.optim.Adam(self.model.parameters(), lr=2e-4)
 
 
 def main():
