@@ -7,6 +7,7 @@ from pytorch_lightning.loggers import WandbLogger
 import wandb
 
 
+@torch.no_grad()
 def noiser(img, noise, step, steps):
     """returns a noisy image"""
 
@@ -68,7 +69,7 @@ class DownBlock(nn.Module):
         self.resnet_conv_first = nn.ModuleList(
             [
                 nn.Sequential(
-                    nn.GroupNorm(8, in_channels if i == 0 else out_channels),
+                    nn.GroupNorm(4, in_channels if i == 0 else out_channels),
                     nn.SiLU(),
                     nn.Conv2d(
                         in_channels if i == 0 else out_channels,
@@ -90,7 +91,7 @@ class DownBlock(nn.Module):
         self.resnet_conv_second = nn.ModuleList(
             [
                 nn.Sequential(
-                    nn.GroupNorm(8, out_channels),
+                    nn.GroupNorm(4, out_channels),
                     nn.SiLU(),
                     nn.Conv2d(
                         out_channels, out_channels, kernel_size=3, stride=1, padding=1
@@ -100,12 +101,12 @@ class DownBlock(nn.Module):
             ]
         )
         self.attention_norms = nn.ModuleList(
-            [nn.GroupNorm(8, out_channels) for _ in range(num_layers)]
+            [nn.GroupNorm(4, out_channels) for _ in range(num_layers)]
         )
 
         self.attentions = nn.ModuleList(
             [
-                nn.MultiheadAttention(out_channels, num_heads, batch_first=True)
+                nn.MultiheadAttention(out_channels, num_heads=2, batch_first=True)
                 for _ in range(num_layers)
             ]
         )
@@ -162,7 +163,7 @@ class MidBlock(nn.Module):
         self.resnet_conv_first = nn.ModuleList(
             [
                 nn.Sequential(
-                    nn.GroupNorm(8, in_channels if i == 0 else out_channels),
+                    nn.GroupNorm(4, in_channels if i == 0 else out_channels),
                     nn.SiLU(),
                     nn.Conv2d(
                         in_channels if i == 0 else out_channels,
@@ -184,7 +185,7 @@ class MidBlock(nn.Module):
         self.resnet_conv_second = nn.ModuleList(
             [
                 nn.Sequential(
-                    nn.GroupNorm(8, out_channels),
+                    nn.GroupNorm(4, out_channels),
                     nn.SiLU(),
                     nn.Conv2d(
                         out_channels, out_channels, kernel_size=3, stride=1, padding=1
@@ -195,12 +196,12 @@ class MidBlock(nn.Module):
         )
 
         self.attention_norms = nn.ModuleList(
-            [nn.GroupNorm(8, out_channels) for _ in range(num_layers)]
+            [nn.GroupNorm(4, out_channels) for _ in range(num_layers)]
         )
 
         self.attentions = nn.ModuleList(
             [
-                nn.MultiheadAttention(out_channels, num_heads, batch_first=True)
+                nn.MultiheadAttention(out_channels, num_heads=2, batch_first=True)
                 for _ in range(num_layers)
             ]
         )
@@ -269,7 +270,7 @@ class UpBlock(nn.Module):
         self.resnet_conv_first = nn.ModuleList(
             [
                 nn.Sequential(
-                    nn.GroupNorm(8, in_channels if i == 0 else out_channels),
+                    nn.GroupNorm(4, in_channels if i == 0 else out_channels),
                     nn.SiLU(),
                     nn.Conv2d(
                         in_channels if i == 0 else out_channels,
@@ -291,7 +292,7 @@ class UpBlock(nn.Module):
         self.resnet_conv_second = nn.ModuleList(
             [
                 nn.Sequential(
-                    nn.GroupNorm(8, out_channels),
+                    nn.GroupNorm(4, out_channels),
                     nn.SiLU(),
                     nn.Conv2d(
                         out_channels, out_channels, kernel_size=3, stride=1, padding=1
@@ -302,12 +303,12 @@ class UpBlock(nn.Module):
         )
 
         self.attention_norms = nn.ModuleList(
-            [nn.GroupNorm(8, out_channels) for _ in range(num_layers)]
+            [nn.GroupNorm(4, out_channels) for _ in range(num_layers)]
         )
 
         self.attentions = nn.ModuleList(
             [
-                nn.MultiheadAttention(out_channels, num_heads, batch_first=True)
+                nn.MultiheadAttention(out_channels, num_heads=2, batch_first=True)
                 for _ in range(num_layers)
             ]
         )
@@ -416,7 +417,7 @@ class Unet(nn.Module):
                 )
             )
 
-        self.norm_out = nn.GroupNorm(8, 16)
+        self.norm_out = nn.GroupNorm(4, 16)
         self.conv_out = nn.Conv2d(16, im_channels, kernel_size=3, padding=1)
 
     def forward(self, x, t):
@@ -474,40 +475,60 @@ class LitDDPM(pl.LightningModule):
         self.loss = nn.MSELoss()
         self.diffusion_steps = diffusion_steps
         self.save_hyperparameters()
+        self.automatic_optimization = False
 
+    @torch.no_grad()
     def forward(self, x):
-        for t in range(self.diffusion_steps-1):
-            x = self.model(x, torch.tensor([t] * x.shape[0]))
+        for t in range(self.diffusion_steps - 1):
+            x = self.model(x, torch.tensor([t/self.diffusion_steps] * x.shape[0]))
         return x
 
     def training_step(self, batch, batch_idx):
         x, y = batch
         noise = torch.randn_like(x)
         total_loss = 0
+        optim = self.optimizers()
 
-        for i in range(self.diffusion_steps-1):
+        for i in range(self.diffusion_steps - 1):
+            optim.zero_grad()
             noisy_img = noiser(x, noise, i, self.diffusion_steps)
-            target_img = noiser(x, noise, i+1, self.diffusion_steps)
-            
-            generated_img = self.model(noisy_img, torch.tensor([i] * noisy_img.shape[0]))
+            target_img = noiser(x, noise, i + 1, self.diffusion_steps)
+
+            generated_img = self.model(
+                noisy_img, torch.tensor([i/self.diffusion_steps] * noisy_img.shape[0])
+            )
+
             loss = self.loss(generated_img, target_img)
-            total_loss += loss
+            self.manual_backward(loss)
+            optim.step()
+
+            total_loss += loss.item()
 
         self.log("train_loss", total_loss, on_step=True, prog_bar=True)
+        self.logger.experiment.log(
+            {
+                "trained": wandb.Image(
+                    torchvision.utils.make_grid(generated_img),
+                    caption=f"Epoch {self.current_epoch}, Batch {batch_idx}",
+                )
+            }
+        )
 
-        if batch_idx % 20 == 0:
+        if batch_idx % 10 == 0:
             noise = torch.randn_like(x)
             generated = self.forward(x)
             grid = torchvision.utils.make_grid(generated)
-            
-            self.logger.experiment.log({
-                "generated": wandb.Image(grid, caption=f"Epoch {self.current_epoch}, Batch {batch_idx}")
-            })
 
-        return total_loss
+            self.logger.experiment.log(
+                {
+                    "generated": wandb.Image(
+                        grid, caption=f"Epoch {self.current_epoch}, Batch {batch_idx}"
+                    )
+                }
+            )
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.model.parameters(), lr=2e-4)
+        return torch.optim.Adam(self.model.parameters(), lr=1e-4)
 
 
 def main():
@@ -519,18 +540,26 @@ def main():
         "celeb-hq/data/celeba_hq", transform=transforms
     )
     test_dataloader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=1, shuffle=True
+        train_dataset, batch_size=2, shuffle=True
     )
-
-    logger = WandbLogger(project="ddpm", dir="celeb-hq/logs")
+    logger = WandbLogger(
+        project="dpm", dir="celeb-hq/logs", save_code=True, log_model=True
+    )
     model = LitDDPM(
-        down_features=[8, 16, 32, 64],
-        middle_features=[64, 64, 32],
+        down_features=[4, 8, 16, 32],
+        middle_features=[32, 32, 16],
         num_layers=1,
-        embed_dim=32,
-        diffusion_steps=10
+        embed_dim=16,
+        diffusion_steps=100,
     )
-    trainer = pl.Trainer(max_epochs=10, logger=logger, default_root_dir="celeb-hq/logs", log_every_n_steps=1)
+    logger.watch(model, log="all", log_graph=True)
+    trainer = pl.Trainer(
+        logger=logger,
+        default_root_dir="celeb-hq/logs",
+        log_every_n_steps=1,
+        profiler="simple",
+        max_epochs=10,
+    )
     trainer.fit(model, test_dataloader)
 
 
