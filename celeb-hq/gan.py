@@ -5,47 +5,16 @@ import torch.optim as optim
 import torchvision
 import tqdm as tqdm
 import lightning.pytorch as pl
+from pytorch_lightning.loggers import WandbLogger
 import wandb
+from torchmetrics.image.fid import FrechetInceptionDistance
 
 
-class VariationalEncoder(nn.Module):
-    def __init__(self, d=1, latent_size=100):
-        super(VariationalEncoder, self).__init__()
+class Generator(nn.Module):
+    def __init__(self, d):
+        super(Generator, self).__init__()
         self.layers = nn.Sequential(
-            nn.Conv2d(3, 128 // d, 4, 2, 1),
-            nn.LeakyReLU(0.2),
-            nn.Conv2d(128 // d, 256 // d, 4, 2, 1),
-            nn.LeakyReLU(0.2),
-            nn.Conv2d(256 // d, 512 // d, 4, 2, 1),
-            nn.LeakyReLU(0.2),
-            nn.Conv2d(512 // d, 1024 // d, 4, 2, 1),
-            nn.LeakyReLU(0.2),
-            nn.Flatten(),
-        )
-        self.mean = nn.Linear(2048, latent_size)
-        self.logvar = nn.Linear(2048, latent_size)
-
-    def forward(self, x):
-        x = self.layers(x)
-        x = x.view(x.size(0), -1)
-        return self.mean(x), self.logvar(x)
-
-    def sample(self, x):
-        mean, logvar = self(x)
-        std = torch.exp(0.5 * logvar)
-        eps = torch.randn_like(std)
-        return mean + eps * std
-
-    def kl_divergence(self, x):
-        mean, logvar = self(x)
-        return -0.5 * torch.sum(1 + logvar - mean.pow(2) - logvar.exp(), dim=1).mean()
-
-
-class Decoder(nn.Module):
-    def __init__(self, d=1, latent_dim=100):
-        super(Decoder, self).__init__()
-        self.layers = nn.Sequential(
-            nn.ConvTranspose2d(latent_dim, 1024 // d, 4, 1, 0),
+            nn.ConvTranspose2d(100, 1024 // d, 4, 1, 0),
             nn.ReLU(),
             nn.ConvTranspose2d(1024 // d, 512 // d, 4, 2, 1),
             nn.ReLU(),
@@ -58,11 +27,12 @@ class Decoder(nn.Module):
         )
 
     def forward(self, x):
+        x = x.view(-1, 100, 1, 1)
         return self.layers(x)
 
 
 class Discriminator(nn.Module):
-    def __init__(self, d=1):
+    def __init__(self, d):
         super(Discriminator, self).__init__()
         self.layers = nn.Sequential(
             nn.Conv2d(3, 128 // d, 4, 2, 1),
@@ -74,10 +44,12 @@ class Discriminator(nn.Module):
             nn.Conv2d(512 // d, 1024 // d, 4, 2, 1),
             nn.LeakyReLU(0.2),
             nn.Conv2d(1024 // d, 1, 4, 1, 0),
+            nn.Flatten(),
+            nn.Linear(1, 1),
         )
 
     def forward(self, x):
-        return self.layers(x).view(-1)
+        return self.layers(x).view(-1, 1)
 
     def grad_penalty(self, real: torch.Tensor, fake: torch.Tensor) -> torch.Tensor:
         alpha = torch.rand(real.size(0), 1, 1, 1).to(real.device)
@@ -96,138 +68,132 @@ class Discriminator(nn.Module):
         return gp
 
 
-class VAE(nn.Module):
-    def __init__(self, d=1):
-        super(VAE, self).__init__()
-        self.encoder = VariationalEncoder(d)
-        self.decoder = Decoder(d)
-
-    def forward(self, x):
-        mu, logvar = self.encoder(x)
-        std = torch.exp(0.5 * logvar)
-        eps = torch.randn_like(std)
-        z = mu + eps * std
-        x = self.decoder(z.view(-1, 100, 1, 1))
-        return x, mu, logvar
-
-
-class LitVAE(pl.LightningModule):
-    def __init__(self, d=8):
-        super(LitVAE, self).__init__()
-        self.vae = VAE(d)
+class GAN(pl.LightningModule):
+    def __init__(
+        self, d=1, lr=1e-4, betas=(0.5, 0.999), batch_size=64, fid_features=2048
+    ):
+        super(GAN, self).__init__()
+        self.generator = Generator(d)
         self.discriminator = Discriminator(d)
-        self.optimizer_d = optim.Adam(self.discriminator.parameters(), lr=1e-3)
-        self.optimizer_vae = optim.Adam(self.vae.parameters(), lr=1e-3)
+        self.optimizer_g = optim.Adam(self.generator.parameters(), lr=lr, betas=betas)
+        self.optimizer_d = optim.Adam(
+            self.discriminator.parameters(), lr=lr, betas=betas
+        )
         self.automatic_optimization = False
-        # self.fid = FrechetInceptionDistance(feature=64)
+        self.fid = FrechetInceptionDistance(feature=fid_features)
+        self.batch_size = batch_size
 
     def forward(self, x):
-        return self.vae(x)
+        return self.generator(x)
 
     def training_step(self, batch, batch_idx):
         x, _ = batch
-        optim_d, optim_vae = self.optimizers()
+        optim_d, optim_g = self.optimizers()
 
-        # Train Discriminator
+        # Train discriminator
         optim_d.zero_grad()
-        x_hat, mu, logvar = self.vae(x)
-        loss_d = self.discriminator_loss(x, x_hat)
+        z = torch.randn(x.size(0), 100, 1, 1, device=self.device)
+        x_fake = self.generator(z).detach()
+        d_real = self.discriminator(x)
+        d_fake = self.discriminator(x_fake)
+        loss_d = (
+            d_fake.mean()
+            - d_real.mean()
+            + self.discriminator.grad_penalty(x, x_fake) * 10
+            + 0.001 * (d_real**2).mean()
+        )
         self.manual_backward(loss_d)
         optim_d.step()
 
-        # Train VAE
-        optim_vae.zero_grad()
-        x_hat, mu, logvar = self.vae(x)
-        loss_vae = (
-            self.vae_loss(x_hat, x, mu, logvar) - self.discriminator(x_hat).mean()
-        )
-        self.manual_backward(loss_vae)
-        optim_vae.step()
+        # Train generator
+        if self.global_step % 4 == 0:
+            optim_g.zero_grad()
+            z = torch.randn(x.size(0), 100, 1, 1, device=self.device)
+            x_fake = self.generator(z)
+            d_fake = self.discriminator(x_fake)
+            loss_g = -d_fake.mean()
+            self.manual_backward(loss_g)
+            optim_g.step()
+            self.log("loss_g", loss_g)
 
-        self.log("loss_d", loss_d, prog_bar=True)
-        self.log("loss_vae", loss_vae, prog_bar=True)
+        # Log metrics
+        self.log("loss_d", loss_d)
+        self.log("d_real", d_real.mean())
+        self.log("d_fake", d_fake.mean())
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
 
-        # Generate images
-        x_hat = self.vae.decoder(
-            torch.randn(x.size(0), 100, device=x.device).view(-1, 100, 1, 1)
-        )
+        z = torch.randn(x.size(0), 100, 1, 1, device=self.device)
+        x_fake = self.generator(z)
 
-        # # Resize images to 299 x 299
-        # resize_transform = torchvision.transforms.Resize((299, 299))
-        # x_resized = torch.stack([resize_transform(x_i) for x_i in x])
-        # x_hat_resized = torch.stack([resize_transform(x_hat_i) for x_hat_i in x_hat])
+        # Resize to 299x299
+        x = F.interpolate(x, size=299, mode="bilinear")
+        x_fake = F.interpolate(x_fake, size=299, mode="bilinear")
 
-        # # Convert images to uint8
-        # x_uint8 = (x_resized * 255).type(torch.uint8)
-        # x_hat_uint8 = (x_hat_resized * 255).type(torch.uint8)
+        # Make u8
+        x = (x * 255).to(torch.uint8)
+        x_fake = (x_fake * 255).to(torch.uint8)
 
-        # self.fid.update(x_uint8, real=True)
-        # self.fid.update(x_hat_uint8, real=False)
+        # Compute FID
+        self.fid.update(x, True)
+        self.fid.update(x_fake, False)
 
-        # self.log("fid", self.fid.compute(), prog_bar=True)
+        self.log("fid", self.fid.compute())
 
-        # Plot images
         self.logger.experiment.log(
             {
                 "Generated Images": wandb.Image(
-                    torchvision.utils.make_grid(x_hat[:64], nrow=8),
-                    caption=f"Epoch {self.current_epoch}, Batch {batch_idx}",
-                ),
-                "Trained Images": wandb.Image(
-                    torchvision.utils.make_grid(self.vae(x)[0][:64], nrow=8),
-                    caption=f"Epoch {self.current_epoch}, Batch {batch_idx}",
-                ),
+                    torchvision.utils.make_grid(x_fake, nrow=8),
+                    caption=f"Epoch {self.current_epoch}, Step {self.global_step}",
+                )
             }
         )
 
-    def discriminator_loss(self, x, x_hat):
-        real_score = self.discriminator(x)
-        fake_score = self.discriminator(x_hat)
-        gp = self.discriminator.grad_penalty(x, x_hat)
-        loss = fake_score.mean() - real_score.mean() + 10 * gp
-        return loss
-
-    def vae_loss(self, recon_x, x, mu, logvar, kl_mult=1.0):
-        # BCE Loss
-        recon_loss = F.binary_cross_entropy(recon_x, x, reduction="sum")
-
-        # KL Divergence
-        kl_div = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-
-        # Total VAE Loss
-        total_loss = recon_loss + kl_div * kl_mult
-        return total_loss / x.size(0)
-
     def configure_optimizers(self):
-        return [self.optimizer_vae, self.optimizer_d], []
+        return self.optimizer_d, self.optimizer_g
+
+    def train_dataloader(self):
+        return torch.utils.data.DataLoader(
+            torchvision.datasets.ImageFolder(
+                "celeb-hq/data/celeba_hq/train",
+                transform=torchvision.transforms.Compose(
+                    [
+                        torchvision.transforms.Resize(64),
+                        torchvision.transforms.ToTensor(),
+                    ]
+                ),
+            ),
+            batch_size=self.batch_size,
+            shuffle=True,
+        )
+
+    def val_dataloader(self):
+        return torch.utils.data.DataLoader(
+            torchvision.datasets.ImageFolder(
+                "celeb-hq/data/celeba_hq/val",
+                transform=torchvision.transforms.Compose(
+                    [
+                        torchvision.transforms.Resize(64),
+                        torchvision.transforms.ToTensor(),
+                    ]
+                ),
+            ),
+            batch_size=self.batch_size,
+            shuffle=False,
+        )
 
 
 def main():
-    transforms = torchvision.transforms.Compose(
-        [
-            torchvision.transforms.ToTensor(),
-            torchvision.transforms.Resize((64, 64)),
-        ]
-    )
-
-    train_dataset = torchvision.datasets.ImageFolder(
-        "celeb-hq/data", transform=transforms
-    )
-
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=32, shuffle=True
-    )
-
-    lit_vae = LitVAE()
-    logger = pl.loggers.WandbLogger(project="vae-gan")
+    logger = WandbLogger(project="celeb-gan")
+    model = GAN()
     trainer = pl.Trainer(
-        max_epochs=10, logger=logger, val_check_interval=0.2, limit_val_batches=1
+        logger=logger,
+        val_check_interval=0.25,
+        limit_val_batches=1,
+        log_every_n_steps=1,
     )
-
-    trainer.fit(lit_vae, train_loader, train_loader)
+    trainer.fit(model)
 
 
 if __name__ == "__main__":
