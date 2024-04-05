@@ -8,7 +8,7 @@ from torchmetrics.classification import Accuracy, Precision, Recall
 
 
 class LitClassifer(pl.LightningModule):
-    def __init__(self, lr=1e-4, batch_size=64):
+    def __init__(self, lr=1e-3, batch_size=64):
         super(LitClassifer, self).__init__()
         self.model = Classifier()
         self.lr = lr
@@ -133,17 +133,25 @@ class Classifier(nn.Module):
             nn.Conv2d(3, 64, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             BasicBlock(64, 64),
+            BasicBlock(64, 64),
             nn.MaxPool2d(kernel_size=2, stride=2),
             BasicBlock(64, 128),
+            BasicBlock(128, 128),
+            BasicBlock(128, 128),
             nn.MaxPool2d(kernel_size=2, stride=2),
             BasicBlock(128, 256),
+            BasicBlock(256, 256),
+            BasicBlock(256, 256),
             nn.MaxPool2d(kernel_size=2, stride=2),
             BasicBlock(256, 512),
+            BasicBlock(512, 512),
+            BasicBlock(512, 512),
             nn.MaxPool2d(kernel_size=2, stride=2),
+            BasicBlock(512, 512),
+            BasicBlock(512, 512),
             BasicBlock(512, 512),
             # nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Flatten(),
-            nn.Dropout1d(0.5),
             nn.BatchNorm1d(512 * 4),
             nn.Linear(512 * 4, 512),
             nn.ReLU(inplace=True),
