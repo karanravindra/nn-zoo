@@ -164,3 +164,4 @@ data/
 /wandb
 .netrc
 .dotnet
+.DS_Store

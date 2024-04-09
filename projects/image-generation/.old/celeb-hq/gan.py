@@ -10,64 +10,6 @@ import wandb
 from torchmetrics.image.fid import FrechetInceptionDistance
 
 
-class Generator(nn.Module):
-    def __init__(self, d):
-        super(Generator, self).__init__()
-        self.layers = nn.Sequential(
-            nn.ConvTranspose2d(100, 1024 // d, 4, 1, 0),
-            nn.ReLU(),
-            nn.ConvTranspose2d(1024 // d, 512 // d, 4, 2, 1),
-            nn.ReLU(),
-            nn.ConvTranspose2d(512 // d, 256 // d, 4, 2, 1),
-            nn.ReLU(),
-            nn.ConvTranspose2d(256 // d, 128 // d, 4, 2, 1),
-            nn.ReLU(),
-            nn.ConvTranspose2d(128 // d, 3, 4, 2, 1),
-            nn.Sigmoid(),
-        )
-
-    def forward(self, x):
-        x = x.view(-1, 100, 1, 1)
-        return self.layers(x)
-
-
-class Discriminator(nn.Module):
-    def __init__(self, d):
-        super(Discriminator, self).__init__()
-        self.layers = nn.Sequential(
-            nn.Conv2d(3, 128 // d, 4, 2, 1),
-            nn.LeakyReLU(0.2),
-            nn.Conv2d(128 // d, 256 // d, 4, 2, 1),
-            nn.LeakyReLU(0.2),
-            nn.Conv2d(256 // d, 512 // d, 4, 2, 1),
-            nn.LeakyReLU(0.2),
-            nn.Conv2d(512 // d, 1024 // d, 4, 2, 1),
-            nn.LeakyReLU(0.2),
-            nn.Conv2d(1024 // d, 1, 4, 1, 0),
-            nn.Flatten(),
-            nn.Linear(1, 1),
-        )
-
-    def forward(self, x):
-        return self.layers(x).view(-1, 1)
-
-    def grad_penalty(self, real: torch.Tensor, fake: torch.Tensor) -> torch.Tensor:
-        alpha = torch.rand(real.size(0), 1, 1, 1).to(real.device)
-        interpolates = (alpha * real + (1 - alpha) * fake).requires_grad_(True)
-        d_interpolates = self(interpolates)
-        gradients = torch.autograd.grad(
-            outputs=d_interpolates,
-            inputs=interpolates,
-            grad_outputs=torch.ones(d_interpolates.size()).to(real.device),
-            create_graph=True,
-            retain_graph=True,
-            only_inputs=True,
-        )[0]
-        gradients = gradients.view(gradients.size(0), -1)
-        gp = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
-        return gp
-
-
 class GAN(pl.LightningModule):
     def __init__(
         self, d=1, lr=1e-4, betas=(0.5, 0.999), batch_size=64, fid_features=2048
