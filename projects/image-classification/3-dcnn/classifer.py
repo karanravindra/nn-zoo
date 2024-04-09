@@ -4,36 +4,73 @@ import torch.nn.functional as F
 import torchvision
 import lightning.pytorch as pl
 from pytorch_lightning.loggers import WandbLogger
-from torchmetrics.classification import Accuracy, Precision, Recall
+from torchmetrics.classification import Accuracy
 
 
-class Classifer(nn.Module):
-    def __init__(self):
-        super(Classifer, self).__init__()
+class VeryDeepConvolutionalNN(nn.Module):
+    """VGG-18-Like Network
+    Based off of https://arxiv.org/abs/1409.1556
+    """
+
+    def __init__(self) -> None:
+        super(VeryDeepConvolutionalNN, self).__init__()
         self.layers = nn.Sequential(
-            nn.Linear(28 * 28, 64),
+            nn.Conv2d(3, 64, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
-            nn.Linear(64, 10),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2),
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(128, 128, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2),
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2),
+            nn.Conv2d(256, 512, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            # nn.MaxPool2d(kernel_size=2), # This is not in the original VGG-18 but is needed to retain some spatial information for smaller images
+            nn.Flatten(),
+            nn.Linear(512 * 2 * 2, 4096),
+            nn.ReLU(inplace=True),
+            nn.Linear(4096, 4096),
+            nn.ReLU(inplace=True),
+            nn.Linear(4096, 10),
         )
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = x.view(x.size(0), -1)
         return self.layers(x)
 
 
 class LitClassifer(pl.LightningModule):
+    """PyTorch Lightning module for training a simple MLP on QMNIST dataset."""
+
     def __init__(self, lr=1e-4, batch_size=64):
         super(LitClassifer, self).__init__()
-        self.model = Classifer()
+        self.model = VeryDeepConvolutionalNN()
         self.lr = lr
         self.batch_size = batch_size
 
         self.criterion = F.cross_entropy
 
         self.accuracy = Accuracy(task="multiclass", num_classes=10)
-        self.precision = Precision(task="multiclass", num_classes=10)
-        self.recall = Recall(task="multiclass", num_classes=10)
-
         self.save_hyperparameters()
 
     def forward(self, x):
@@ -46,13 +83,9 @@ class LitClassifer(pl.LightningModule):
 
         loss = self.criterion(y_hat, y)
         acc = self.accuracy(y_hat, y)
-        prec = self.precision(y_hat, y)
-        rec = self.recall(y_hat, y)
 
         self.log("train_loss", loss, on_step=True, prog_bar=True)
         self.log("train_acc", acc, on_step=True)
-        self.log("train_prec", prec, on_step=True)
-        self.log("train_rec", rec, on_step=True)
 
         return loss
 
@@ -63,13 +96,9 @@ class LitClassifer(pl.LightningModule):
 
         loss = self.criterion(y_hat, y)
         acc = self.accuracy(y_hat, y)
-        prec = self.precision(y_hat, y)
-        rec = self.recall(y_hat, y)
 
         self.log("val_loss", loss)
         self.log("val_acc", acc)
-        self.log("val_prec", prec)
-        self.log("val_rec", rec)
 
         return loss
 

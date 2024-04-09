@@ -7,3 +7,4 @@ There are a bunch of different ways to classify images. Here are a few examples 
 - [Deep Convolutional Neural Network](3-dcnn/README.md)
 - [Residual Network](4-resnet/README.md)
 - [DenseNet](5-densenet/README.md)
+- [Vision Transformer](6-vit/README.md)

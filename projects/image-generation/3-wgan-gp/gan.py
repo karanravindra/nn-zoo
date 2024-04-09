@@ -10,6 +10,140 @@ import wandb
 from torchmetrics.image.fid import FrechetInceptionDistance
 
 
+class Generator(nn.Module):
+    """DCGAN Generator
+    Based off of https://arxiv.org/abs/1511.06434
+    """
+
+    def __init__(
+        self,
+        depth: int,
+        channels: int = 3,
+        latent: int = 100,
+    ) -> None:
+        super(Generator, self).__init__()
+        self.depth = depth
+        self.channels = channels
+        self.latent = latent
+
+        self.layers = nn.Sequential(
+            nn.ConvTranspose2d(
+                self.latent,
+                1024 // self.depth,
+                kernel_size=4,
+                stride=1,
+                padding=0,
+                bias=False,
+            ),
+            nn.BatchNorm2d(1024 // self.depth),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(
+                1024 // self.depth,
+                512 // self.depth,
+                kernel_size=4,
+                stride=2,
+                padding=1,
+                bias=False,
+            ),
+            nn.BatchNorm2d(512 // self.depth),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(
+                512 // self.depth,
+                256 // self.depth,
+                kernel_size=4,
+                stride=2,
+                padding=1,
+                bias=False,
+            ),
+            nn.BatchNorm2d(256 // self.depth),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(
+                256 // self.depth,
+                128 // self.depth,
+                kernel_size=4,
+                stride=2,
+                padding=1,
+                bias=False,
+            ),
+            nn.BatchNorm2d(128 // self.depth),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(
+                128 // self.depth,
+                self.channels,
+                kernel_size=4,
+                stride=2,
+                padding=1,
+                bias=False,
+            ),
+            nn.Tanh(),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = x.view(x.size(0), -1, 1, 1)
+        return self.layers(x)
+
+
+class Discriminator(nn.Module):
+    """DCGAN Discriminator"""
+
+    def __init__(
+        self,
+        depth: int,
+        channels: int = 3,
+    ) -> None:
+        super(Generator, self).__init__()
+        self.depth = depth
+        self.channels = channels
+
+        self.layers = nn.Sequential(
+            nn.Conv2d(
+                self.channels,
+                128 // self.depth,
+                kernel_size=4,
+                stride=2,
+                padding=1,
+                bias=False,
+            ),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Conv2d(
+                128 // self.depth,
+                256 // self.depth,
+                kernel_size=4,
+                stride=2,
+                padding=1,
+                bias=False,
+            ),
+            nn.BatchNorm2d(256 // self.depth),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Conv2d(
+                256 // self.depth,
+                512 // self.depth,
+                kernel_size=4,
+                stride=2,
+                padding=1,
+                bias=False,
+            ),
+            nn.BatchNorm2d(512 // self.depth),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Conv2d(
+                512 // self.depth,
+                1024 // self.depth,
+                kernel_size=4,
+                stride=2,
+                padding=1,
+                bias=False,
+            ),
+            nn.BatchNorm2d(1024 // self.depth),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Conv2d(
+                1024 // self.depth, 1, kernel_size=4, stride=1, padding=0, bias=False
+            ),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.layers(x).view(-1)
+
+
 class GAN(pl.LightningModule):
     def __init__(
         self, d=1, lr=1e-4, betas=(0.5, 0.999), batch_size=64, fid_features=2048
