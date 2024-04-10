@@ -91,7 +91,7 @@ class Discriminator(nn.Module):
         depth: int,
         channels: int = 3,
     ) -> None:
-        super(Generator, self).__init__()
+        super(Discriminator, self).__init__()
         self.depth = depth
         self.channels = channels
 
@@ -146,7 +146,7 @@ class Discriminator(nn.Module):
 
 class GAN(pl.LightningModule):
     def __init__(
-        self, d=1, lr=1e-4, betas=(0.5, 0.999), batch_size=64, fid_features=2048
+        self, d=16, lr=2e-4, betas=(0.5, 0.999), batch_size=64, fid_features=2048
     ):
         super(GAN, self).__init__()
         self.generator = Generator(d)
@@ -232,7 +232,7 @@ class GAN(pl.LightningModule):
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
             torchvision.datasets.ImageFolder(
-                "celeb-hq/data/celeba_hq/train",
+                "data/celeba_hq/train",
                 transform=torchvision.transforms.Compose(
                     [
                         torchvision.transforms.Resize(64),
@@ -247,7 +247,7 @@ class GAN(pl.LightningModule):
     def val_dataloader(self):
         return torch.utils.data.DataLoader(
             torchvision.datasets.ImageFolder(
-                "celeb-hq/data/celeba_hq/val",
+                "data/celeba_hq/val",
                 transform=torchvision.transforms.Compose(
                     [
                         torchvision.transforms.Resize(64),
