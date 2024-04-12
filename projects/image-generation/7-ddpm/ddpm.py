@@ -55,7 +55,7 @@ class DownBlock(nn.Module):
         out_channels,
         t_emb_dim,
         down_sample=True,
-        num_heads=2,
+        num_heads=4,
         num_layers=1,
     ):
         super().__init__()
@@ -152,7 +152,7 @@ class MidBlock(nn.Module):
     3. Resnet block with time embedding
     """
 
-    def __init__(self, in_channels, out_channels, t_emb_dim, num_heads=2, num_layers=1):
+    def __init__(self, in_channels, out_channels, t_emb_dim, num_heads=4, num_layers=1):
         super().__init__()
         self.num_layers = num_layers
         self.resnet_conv_first = nn.ModuleList(
@@ -256,7 +256,7 @@ class UpBlock(nn.Module):
         out_channels,
         t_emb_dim,
         up_sample=True,
-        num_heads=2,
+        num_heads=4,
         num_layers=1,
     ):
         super().__init__()
@@ -568,7 +568,7 @@ class LinearNoiseScheduler:
 class DDPM(pl.LightningModule):
     def __init__(
         self,
-        diffusion_steps=1000,
+        diffusion_steps=10,
         lr=1e-4,
         batch_size=8,
         fid_features=2048,
@@ -584,9 +584,9 @@ class DDPM(pl.LightningModule):
                 "mid_channels": [128, 128, 64],
                 "down_sample": [True, True, False],
                 "time_emb_dim": 64,
-                "num_down_layers": 2,
-                "num_mid_layers": 2,
-                "num_up_layers": 2,
+                "num_down_layers": 1,
+                "num_mid_layers": 1,
+                "num_up_layers": 1,
             }
         )
 
