@@ -3,10 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torchvision
-import wandb
 import tqdm as tqdm
 import lightning.pytorch as pl
 from pytorch_lightning.loggers import WandbLogger
+import wandb
 from torchmetrics.image.fid import FrechetInceptionDistance
 
 
@@ -14,21 +14,26 @@ class Encoder(nn.Module):
     def __init__(self):
         super(Encoder, self).__init__()
         self.layers = nn.Sequential(
-            nn.Conv2d(3, 32, 3, 1, 1),
+            nn.Conv2d(3, 32, 3, 1, 1),  # 512x512
             nn.ReLU(),
-            nn.Conv2d(32, 64, 3, 2, 1),
+            nn.Conv2d(32, 64, 3, 2, 1),  # 256x256
             nn.ReLU(),
-            nn.Conv2d(64, 128, 3, 2, 1),
+            nn.Conv2d(64, 128, 3, 2, 1),  # 128x128
             nn.ReLU(),
-            nn.Conv2d(128, 256, 3, 2, 1),
+            nn.Conv2d(128, 256, 3, 2, 1),  # 64x64
+            nn.ReLU(),
+            nn.Conv2d(256, 512, 3, 2, 1),  # 32x32
+            nn.ReLU(),
+            nn.Conv2d(512, 256, 3, 2, 1),  # 16x16
+            nn.ReLU(),
+            nn.Conv2d(256, 128, 3, 2, 1),  # 8x8
             nn.ReLU(),
             nn.Flatten(),
-            nn.Linear(256 * 8 * 8, 256),
-            nn.ReLU(),
+            nn.Linear(128 * 8 * 8, 512),
         )
 
-        self.mu = nn.Linear(256, 64)
-        self.logvar = nn.Linear(256, 64)
+        self.mu = nn.Linear(512, 256)
+        self.logvar = nn.Linear(512, 256)
 
     def forward(self, x):
         x = self.layers(x)
@@ -41,14 +46,22 @@ class Decoder(nn.Module):
     def __init__(self):
         super(Decoder, self).__init__()
         self.layers = nn.Sequential(
-            nn.Linear(64, 256 * 8 * 8),
+            nn.Linear(256, 512),
             nn.ReLU(),
-            nn.Unflatten(1, (256, 8, 8)),
-            nn.ConvTranspose2d(256, 128, 3, 2, 1, 1),
+            nn.Linear(512, 128 * 8 * 8),
             nn.ReLU(),
-            nn.ConvTranspose2d(128, 64, 3, 2, 1, 1),
+            nn.Unflatten(1, (128, 8, 8)),
+            nn.ConvTranspose2d(128, 256, 3, 2, 1, 1),  # 16x16
             nn.ReLU(),
-            nn.ConvTranspose2d(64, 32, 3, 2, 1, 1),
+            nn.ConvTranspose2d(256, 512, 3, 2, 1, 1),  # 32x32
+            nn.ReLU(),
+            nn.ConvTranspose2d(512, 256, 3, 2, 1, 1),  # 64x64
+            nn.ReLU(),
+            nn.ConvTranspose2d(256, 128, 3, 2, 1, 1),  # 128x128
+            nn.ReLU(),
+            nn.ConvTranspose2d(128, 64, 3, 2, 1, 1),  # 256x256
+            nn.ReLU(),
+            nn.ConvTranspose2d(64, 32, 3, 2, 1, 1),  # 512x512
             nn.ReLU(),
             nn.ConvTranspose2d(32, 3, 3, 1, 1),
             nn.Sigmoid(),
@@ -58,65 +71,16 @@ class Decoder(nn.Module):
         return self.layers(x)
 
 
-class Discriminator(nn.Module):
-    def __init__(self):
-        super(Discriminator, self).__init__()
-        self.layers = nn.Sequential(
-            nn.Conv2d(3, 32, 3, 1, 1),
-            nn.ReLU(),
-            nn.Conv2d(32, 64, 3, 2, 1),
-            nn.ReLU(),
-            nn.Conv2d(64, 128, 3, 2, 1),
-            nn.ReLU(),
-            nn.Conv2d(128, 256, 3, 2, 1),
-            nn.ReLU(),
-            nn.Flatten(),
-            nn.Linear(256 * 8 * 8, 1),
-        )
-
-    def forward(self, x):
-        return self.layers(x)
-
-    def grad_penalty(self, real, fake):
-        alpha = torch.rand(
-            real.size(0), 1, 1, 1, device=real.device, requires_grad=True
-        )
-        interpolates = alpha * real + (1 - alpha) * fake
-        # interpolates.requires_grad = True
-        print(interpolates.requires_grad)
-        disc_interpolates = self(interpolates)
-        print(disc_interpolates.requires_grad)
-        gradients = torch.autograd.grad(
-            outputs=disc_interpolates,
-            inputs=interpolates,
-            grad_outputs=torch.ones(
-                disc_interpolates.size(), device=real.device, requires_grad=True
-            ),
-            create_graph=True,
-            retain_graph=True,
-            only_inputs=True,
-        )[0]
-        gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
-        return gradient_penalty
-
-
 class VAE(pl.LightningModule):
-    def __init__(self, lr=1e-3, batch_size=64, fid_features=2048):
+    def __init__(self, lr=2e-4, batch_size=32, fid_features=2048):
         super(VAE, self).__init__()
         self.encoder = Encoder()
         self.decoder = Decoder()
-        self.discriminator = Discriminator()
 
-        # self.fid = FrechetInceptionDistance(fid_features)
+        self.fid = FrechetInceptionDistance(fid_features)
 
         self.lr = lr
         self.batch_size = batch_size
-
-        self.optim_encoder = optim.Adam(self.encoder.parameters(), lr=lr)
-        self.optim_decoder = optim.Adam(self.decoder.parameters(), lr=lr)
-        self.optim_discriminator = optim.Adam(self.discriminator.parameters(), lr=lr)
-
-        self.automatic_optimization = False
 
         self.save_hyperparameters()
 
@@ -137,57 +101,17 @@ class VAE(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x, _ = batch
+        x_hat, mu, logvar = self(x)
+        bce, kld = self.loss(x, x_hat, mu, logvar)
 
-        optim_encoder, optim_decoder, optim_discriminator = self.optimizers()
+        total_loss = bce + kld
 
-        # Train encoder
-        optim_encoder.zero_grad()
-        mu, logvar = self.encoder(x)
-        z = self.reparameterize(mu, logvar)
+        self.log("train_recon_loss", bce)
+        self.log("train_kld_loss", kld)
 
-        loss_prior = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+        self.log("train_total_loss", total_loss)
 
-        x_hat = self.decoder(z)
-        loss_recon = self.discriminator(x_hat).mean()
-        encoder_loss = loss_prior + loss_recon
-        encoder_loss.backward()
-        optim_encoder.step()
-
-        # Train decoder
-        optim_decoder.zero_grad()
-        mu, logvar = self.encoder(x)
-        z = self.reparameterize(mu, logvar)
-        x_hat = self.decoder(z)
-        loss_recon = self.discriminator(x_hat).mean()
-        loss_gan = (
-            (self.discriminator(x)).log()
-            + (1 - self.discriminator(x_hat)).log()
-            + (1 - self.discriminator(self.decoder(torch.randn_like(mu)))).log()
-        )
-        decoder_loss = loss_recon - loss_gan
-        decoder_loss.backward()
-        optim_decoder.step()
-
-        # Train discriminator
-        optim_discriminator.zero_grad()
-        z = torch.randn_like(mu)
-        x_fake = self.decoder(z).detach()
-        d_real = self.discriminator(x)
-        d_fake = self.discriminator(x_fake)
-        loss_d = (
-            d_fake.mean()
-            - d_real.mean()
-            + self.discriminator.grad_penalty(x, x_fake) * 10
-            + 0.001 * (d_real**2).mean()
-        )
-
-        loss_d.backward()
-        optim_discriminator.step()
-
-        # Logging
-        self.log("train_encoder_loss", encoder_loss)
-        self.log("train_decoder_loss", decoder_loss)
-        self.log("train_discriminator_loss", loss_d)
+        return total_loss
 
     def validation_step(self, batch, batch_idx):
         x, _ = batch
@@ -202,41 +126,39 @@ class VAE(pl.LightningModule):
         self.log("val_total_loss", total_loss)
 
         if batch_idx == 0:
+            x_hat = self.decoder(torch.randn_like(mu, device=mu.device)[:16])
             self.logger.experiment.log(
                 {
                     "reconstructed": wandb.Image(
-                        torchvision.utils.make_grid(x_hat_recon),
+                        torchvision.utils.make_grid(x_hat_recon[:16]),
                         caption=f"Epoch {self.current_epoch}, Step {self.global_step}",
-                    )
-                }
-            )
-
-            x_hat = self.decoder(torch.randn_like(mu))
-            self.logger.experiment.log(
-                {
+                    ),
                     "generated": wandb.Image(
-                        torchvision.utils.make_grid(x_hat),
+                        torchvision.utils.make_grid(
+                            x_hat,
+                        ),
                         caption=f"Epoch {self.current_epoch}, Step {self.global_step}",
-                    )
+                    ),
                 }
             )
 
-            # # Resize to 299x299
-            # x = F.interpolate(x, size=299)
-            # x_hat = F.interpolate(x_hat, size=299)
+            # Resize to 299x299
+            x = F.interpolate(x, size=299)
+            x_hat = F.interpolate(x_hat, size=299)
 
-            # # Convert to u8
-            # x = (x * 255).to(torch.uint8)
-            # x_hat = (x_hat * 255).to(torch.uint8)
+            # Convert to u8
+            x = (x * 255).to(torch.uint8)
+            x_hat = (x_hat * 255).to(torch.uint8)
 
-            # # Compute FID
-            # self.fid.update(x, real=True)
-            # self.fid.update(x_hat, real=False)
+            # Compute FID
+            self.fid.update(x, real=True)
+            self.fid.update(x_hat, real=False)
 
-            # self.log("fid", self.fid.compute())
+            self.log("fid", self.fid.compute())
+            self.fid.reset()
 
     def configure_optimizers(self):
-        return [self.optim_encoder, self.optim_decoder, self.optim_discriminator]
+        return optim.Adam(self.parameters(), lr=self.lr)
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
@@ -244,7 +166,7 @@ class VAE(pl.LightningModule):
                 "data/celeba_hq/train",
                 transform=torchvision.transforms.Compose(
                     [
-                        torchvision.transforms.Resize(64),
+                        torchvision.transforms.Resize(512),
                         torchvision.transforms.ToTensor(),
                     ]
                 ),
@@ -261,7 +183,7 @@ class VAE(pl.LightningModule):
                 "data/celeba_hq/val",
                 transform=torchvision.transforms.Compose(
                     [
-                        torchvision.transforms.Resize(64),
+                        torchvision.transforms.Resize(512),
                         torchvision.transforms.ToTensor(),
                     ]
                 ),
@@ -275,17 +197,18 @@ class VAE(pl.LightningModule):
 def main():
     vae = VAE()
     wandb_logger = WandbLogger(
-        project="vae-gan",
+        project="vae-test",
         save_code=True,
         log_model=True,
-        save_dir="./logs",
+        save_dir="./projects/image-generation/4-vae/logs",
     )
     trainer = pl.Trainer(
         logger=wandb_logger,
         val_check_interval=0.5,
         log_every_n_steps=1,
-        default_root_dir="./logs",
+        default_root_dir="./projects/image-generation/4-vae/logs",
         max_steps=100_000,
+        enable_checkpointing=True,
     )
     trainer.fit(vae)
 
