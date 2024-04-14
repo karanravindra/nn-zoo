@@ -13,7 +13,7 @@ class ConvolutionalNN(nn.Module):
     def __init__(self) -> None:
         super(ConvolutionalNN, self).__init__()
         self.layers = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=3, padding=1),
+            nn.Conv2d(3, 32, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2),
             nn.Conv2d(32, 64, kernel_size=3, padding=1),
@@ -31,7 +31,7 @@ class ConvolutionalNN(nn.Module):
 
 
 class LitClassifer(pl.LightningModule):
-    """PyTorch Lightning module for training a simple MLP on QMNIST dataset."""
+    """PyTorch Lightning module for training a simple MLP on CIFAR10 dataset."""
 
     def __init__(self, lr=1e-4, batch_size=64):
         super(LitClassifer, self).__init__()
@@ -82,9 +82,9 @@ class LitClassifer(pl.LightningModule):
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
-            torchvision.datasets.QMNIST(
-                root="qmnist/data",
-                what="train",
+            torchvision.datasets.CIFAR10(
+                root="data",
+                train=True,
                 transform=torchvision.transforms.ToTensor(),
             ),
             batch_size=self.batch_size,
@@ -95,9 +95,9 @@ class LitClassifer(pl.LightningModule):
 
     def val_dataloader(self):
         return torch.utils.data.DataLoader(
-            torchvision.datasets.QMNIST(
-                root="qmnist/data",
-                what="test",
+            torchvision.datasets.CIFAR10(
+                root="data",
+                train=False,
                 transform=torchvision.transforms.ToTensor(),
             ),
             batch_size=self.batch_size,
@@ -110,13 +110,13 @@ class LitClassifer(pl.LightningModule):
 if __name__ == "__main__":
     model = LitClassifer()
     logger = WandbLogger(
-        project="qmnist", save_dir="qmnist/logs", log_model=True, save_code=True
+        project="cifar10", save_dir="logs", log_model=True, save_code=True
     )
     logger.watch(model, log="all")
     trainer = pl.Trainer(
         logger=logger,
         max_epochs=20,
-        default_root_dir="qmnist/logs",
+        default_root_dir="logs",
         val_check_interval=0.5,
     )
     trainer.fit(model)

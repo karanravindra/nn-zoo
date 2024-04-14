@@ -2,5 +2,6 @@
 # Edit at your own risk.
 # <hostname>	<port>	<incl. subdomains>	<created>	<max-age>
 update.code.visualstudio.com	0	1	1712873388	31536000
+cs231n.stanford.edu	0	0	1713050925	31536000
 www.dropbox.com	0	1	1712717237	31536000
 ucb5e291af81eb4fcef9ce0f923c.dl.dropboxusercontent.com	0	1	1712717238	31536000
