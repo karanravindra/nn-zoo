@@ -318,31 +318,31 @@ class VQVAE_Trainer(pl.LightningModule):
         self,
         fid_features=2048,
         in_channels=3,
-        num_hiddens=128,
-        num_downsampling_layers=2,
-        num_residual_layers=2,
-        num_residual_hiddens=32,
-        embedding_dim=3,
-        num_embeddings=512,
+        num_hiddens=32,
+        num_downsampling_layers=4,
+        num_residual_layers=4,
+        num_residual_hiddens=64,
+        embedding_dim=16,
+        num_embeddings=256,
         use_ema=True,
         decay=0.99,
         epsilon=1e-5,
-        beta=0.25,
+        beta=1,
         lr=2e-4,
-        batch_size=32,
+        batch_size=64,
     ):
         super(VQVAE_Trainer, self).__init__()
         self.model = VQVAE(
-            in_channels=3,
-            num_hiddens=128,
-            num_downsampling_layers=2,
-            num_residual_layers=2,
-            num_residual_hiddens=32,
-            embedding_dim=1,
-            num_embeddings=512,
-            use_ema=True,
-            decay=0.99,
-            epsilon=1e-5,
+            in_channels=in_channels,
+            num_hiddens=num_hiddens,
+            num_downsampling_layers=num_downsampling_layers,
+            num_residual_layers=num_residual_layers,
+            num_residual_hiddens=num_residual_hiddens,
+            embedding_dim=embedding_dim,
+            num_embeddings=num_embeddings,
+            use_ema=use_ema,
+            decay=decay,
+            epsilon=epsilon,
         )
 
         self.fid = FrechetInceptionDistance(fid_features)
@@ -421,13 +421,15 @@ class VQVAE_Trainer(pl.LightningModule):
                 "data/celeba_hq/train",
                 transform=torchvision.transforms.Compose(
                     [
-                        torchvision.transforms.Resize((128, 128)),
+                        torchvision.transforms.Resize((256, 256)),
                         torchvision.transforms.ToTensor(),
                     ]
                 ),
             ),
             batch_size=self.batch_size,
             shuffle=True,
+            num_workers=16,
+            persistent_workers=True,
         )
 
     def val_dataloader(self):
@@ -436,17 +438,20 @@ class VQVAE_Trainer(pl.LightningModule):
                 "data/celeba_hq/val",
                 transform=torchvision.transforms.Compose(
                     [
-                        torchvision.transforms.Resize((128, 128)),
+                        torchvision.transforms.Resize((256, 256)),
                         torchvision.transforms.ToTensor(),
                     ]
                 ),
             ),
             batch_size=self.batch_size,
-            shuffle=True,
+            shuffle=False,
+            num_workers=4,
+            persistent_workers=True,
         )
 
 
 def main():
+    torch.set_float32_matmul_precision('high')
     vae = VQVAE_Trainer()
     wandb_logger = WandbLogger(
         project="vq-vae",
@@ -456,12 +461,13 @@ def main():
     )
     trainer = pl.Trainer(
         logger=wandb_logger,
-        val_check_interval=0.5,
+        check_val_every_n_epoch=1,
         limit_val_batches=1,
-        log_every_n_steps=1,
+        log_every_n_steps=10,
         default_root_dir="./projects/image-generation/6-vq-vae/logs/",
-        max_steps=10_000,
+        max_steps=100_000,
         enable_checkpointing=True,
+        precision="bf16-mixed"
     )
     trainer.fit(vae)
 
