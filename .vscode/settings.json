@@ -1,5 +1,16 @@
 {
   "python.defaultInterpreterPath": "/home/zeus/miniconda3/envs/cloudspace/bin/python",
+  "jupyter.kernels.excludePythonEnvironments": [
+    "/commands/python3",
+    "/commands/python",
+    "/bin/python3.10",
+    "/usr/bin/python3.10",
+    "/bin/python3",
+    "/usr/bin/python3",
+    "/bin/python3.8",
+    "/usr/bin/python3.8",
+    "/home/zeus/miniconda3/bin/python"
+  ],
   "workbench.startupEditor": "none",
   "python.terminal.activateEnvironment": false,
   "terminal.integrated.drawBoldTextInBrightColors": false,
@@ -8,10 +19,9 @@
   "terminal.integrated.localEchoEnabled": "off",
   "terminal.integrated.localEchoStyle": "#000000",
   "remote.autoForwardPorts": false,
-  "terminal.integrated.defaultProfile.linux": "zsh",
-  "terminal.integrated.tabs.title": "${process}${separator}${task}",
   "jupyter.notebookFileRoot": "${workspaceFolder}",
-  "terminal.integrated.enableMultiLinePasteWarning": false,
+  "terminal.integrated.enableMultiLinePasteWarning": "never",
+  "terminal.integrated.showTerminalConfigPrompt": false,
   "files.exclude": {
     "venv": true,
     "lightning-annotations.json": true,
@@ -57,20 +67,13 @@
     ".vscode-server/**": true,
     ".vscode-server-insiders/**": true,
     ".tmplaigit": true,
-    ".viminfo": true
+    ".viminfo": true,
+    ".idea/**": true,
+    ".java/**": true
   },
   "files.associations": {
     "*.studiorc": "shellscript"
   },
-  "jupyter.kernels.excludePythonEnvironments": [
-    "/commands/python3",
-    "/commands/python",
-    "/bin/python3.10",
-    "/usr/bin/python3.10",
-    "/bin/python3",
-    "/usr/bin/python3",
-    "/bin/python3.8",
-    "/usr/bin/python3.8"
-  ],
-  "python.analysis.typeCheckingMode": "basic"
+  "files.enableTrash": false,
+  "explorer.excludeGitIgnore": true
 }
