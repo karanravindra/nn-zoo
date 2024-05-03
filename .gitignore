@@ -165,3 +165,6 @@ data/
 .netrc
 .dotnet
 .DS_Store
+tiny-imagenet-200
+.wget-hsts
+.idea
