@@ -168,3 +168,4 @@ data/
 tiny-imagenet-200
 .wget-hsts
 .idea
+.git-credentials
