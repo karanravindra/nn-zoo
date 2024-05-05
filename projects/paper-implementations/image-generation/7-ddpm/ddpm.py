@@ -121,18 +121,18 @@ class DDPM(pl.LightningModule):
             self.log("fid eta: 1", self.fid.compute())
             self.fid.reset()
 
+    @torch.no_grad()
     def generate(self, num_images=8, num_inference_steps=50, eta=0.0):
         # Plot some images
         self.model.eval()
         pipeline = diffusers.DDIMPipeline(self.model, self.scheduler)
-
-        with torch.no_grad():
-            imgs = pipeline(
-                batch_size=num_images,
-                num_inference_steps=num_inference_steps,
-                output_type="np",
-                eta=eta,
-            ).images
+        print(pipeline)
+        imgs = pipeline(
+            batch_size=num_images,
+            num_inference_steps=num_inference_steps,
+            output_type="np",
+            eta=eta,
+        ).images
 
         # convert to torch tensor
         imgs = torch.tensor(imgs)
@@ -149,7 +149,12 @@ class DDPM(pl.LightningModule):
                 "data",
                 train=True,
                 download=True,
-                transform=torchvision.transforms.ToTensor(),
+                transform=torchvision.transforms.Compose(
+                    [
+                        torchvision.transforms.ToTensor(),
+                        torchvision.transforms.Resize((32, 32))
+                    ]
+                )
             ),
             batch_size=self.batch_size,
             shuffle=True,
@@ -163,7 +168,12 @@ class DDPM(pl.LightningModule):
                 "data",
                 train=False,
                 download=True,
-                transform=torchvision.transforms.ToTensor(),
+                transform=torchvision.transforms.Compose(
+                    [
+                        torchvision.transforms.ToTensor(),
+                        torchvision.transforms.Resize((32, 32))
+                    ]
+                )
             ),
             batch_size=self.batch_size,
             shuffle=False,
@@ -183,15 +193,19 @@ def main():
             down_block_types=(
                 "DownBlock2D",
                 "DownBlock2D",
+                "AttnDownBlock2D",
+                "AttnDownBlock2D",
             ),  # "DownBlock2D", "AttnDownBlock2D",
             up_block_types=(
+                "AttnUpBlock2D",
+                "AttnUpBlock2D",
                 "UpBlock2D",
                 "UpBlock2D",
             ),  # "UpBlock2D", "AttnUpBlock2D",
-            block_out_channels=(64, 128),
-            layers_per_block=2,
+            block_out_channels=(64, 128, 256, 256),
+            layers_per_block=1,
         ))
-    logger.watch(model, log="all", log_freq=10, log_graph=True)
+    logger.watch(model.model, log="all", log_freq=10, log_graph=True)
     trainer = pl.Trainer(
         logger=logger,
         check_val_every_n_epoch=1,
