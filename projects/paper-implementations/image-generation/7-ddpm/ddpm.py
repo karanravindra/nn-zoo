@@ -19,17 +19,41 @@ class DDPM(pl.LightningModule):
         model_type="unet",
         scheduler_type="ddim",
         num_train_timesteps=4000,
-        model=None
+        model=None,
+        sample_size=(32, 32),
+        in_channels=1,
+        out_channels=1,
+        down_block_types=(
+            "DownBlock2D",
+            "DownBlock2D",
+            "AttnDownBlock2D",
+            "AttnDownBlock2D",
+        ),  # "DownBlock2D", "AttnDownBlock2D",
+        up_block_types=(
+            "AttnUpBlock2D",
+            "AttnUpBlock2D",
+            "UpBlock2D",
+            "UpBlock2D",
+        ),  # "UpBlock2D", "AttnUpBlock2D",
+        block_out_channels=(64, 128, 256, 256),
+        layers_per_block=1,
     ):
         super(DDPM, self).__init__()
-        self.model = model
+        self.model = model=diffusers.UNet2DModel(
+            sample_size=sample_size,
+            in_channels=in_channels,
+            out_channels=out_channels,
+            down_block_types=down_block_types,  # "DownBlock2D", "AttnDownBlock2D",
+            up_block_types=up_block_types,  # "UpBlock2D", "AttnUpBlock2D",
+            block_out_channels=block_out_channels,
+            layers_per_block=layers_per_block,
+        )
 
         self.optimizer = optim.AdamW(self.model.parameters(), lr=lr)
         self.scheduler = diffusers.DDIMScheduler(
             num_train_timesteps=num_train_timesteps,
             rescale_betas_zero_snr=True,
         )
-        self.fid = FrechetInceptionDistance(feature=2048)
         self.batch_size = batch_size
         self.criterion = F.mse_loss
 
@@ -86,6 +110,8 @@ class DDPM(pl.LightningModule):
                     "eta: 1": [wandb.Image(img) for img in imgs_eta1],
                 }
             )
+            
+            fid = FrechetInceptionDistance(feature=2048)
 
             # Log FID
             # Upscale images to 299x299
@@ -104,22 +130,22 @@ class DDPM(pl.LightningModule):
 
             # Calculate FID
             # eta 0
-            self.fid.update(x, True)
-            self.fid.update(imgs_eta0, False)
-            self.log("fid eta: 0", self.fid.compute())
-            self.fid.reset()
+            fid.update(x, True)
+            fid.update(imgs_eta0, False)
+            self.log("fid eta: 0", fid.compute())
+            fid.reset()
 
             # eta 0.5
-            self.fid.update(x, True)
-            self.fid.update(imgs_eta05, False)
-            self.log("fid eta: 0.5", self.fid.compute())
-            self.fid.reset()
+            fid.update(x, True)
+            fid.update(imgs_eta05, False)
+            self.log("fid eta: 0.5", fid.compute())
+            fid.reset()
 
             # eta 1
-            self.fid.update(x, True)
-            self.fid.update(imgs_eta1, False)
-            self.log("fid eta: 1", self.fid.compute())
-            self.fid.reset()
+            fid.update(x, True)
+            fid.update(imgs_eta1, False)
+            self.log("fid eta: 1", fid.compute())
+            fid.reset()
 
     @torch.no_grad()
     def generate(self, num_images=8, num_inference_steps=50, eta=0.0):
@@ -186,25 +212,7 @@ def main():
     logger = WandbLogger(
         name="mnist", project="diffusion", log_model="all", save_code=True, tags=["ddim", "mnist"]
     )
-    model = DDPM(model=diffusers.UNet2DModel(
-            sample_size=(28, 28),
-            in_channels=1,
-            out_channels=1,
-            down_block_types=(
-                "DownBlock2D",
-                "DownBlock2D",
-                "AttnDownBlock2D",
-                "AttnDownBlock2D",
-            ),  # "DownBlock2D", "AttnDownBlock2D",
-            up_block_types=(
-                "AttnUpBlock2D",
-                "AttnUpBlock2D",
-                "UpBlock2D",
-                "UpBlock2D",
-            ),  # "UpBlock2D", "AttnUpBlock2D",
-            block_out_channels=(64, 128, 256, 256),
-            layers_per_block=1,
-        ))
+    model = DDPM()
     logger.watch(model.model, log="all", log_freq=10, log_graph=True)
     trainer = pl.Trainer(
         logger=logger,
