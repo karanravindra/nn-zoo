@@ -8,68 +8,7 @@ import lightning.pytorch as pl
 from pytorch_lightning.loggers import WandbLogger
 import wandb
 from torchmetrics.image.fid import FrechetInceptionDistance
-from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
 
-class Discriminator(nn.Module):
-    """DCGAN Discriminator"""
-
-    def __init__(
-        self,
-        depth: int,
-        channels: int = 3,
-    ) -> None:
-        super(Discriminator, self).__init__()
-        self.depth = depth
-        self.channels = channels
-
-        self.layers = nn.Sequential(
-            # nn.Conv2d(
-            #     self.channels,
-            #     128 // self.depth,
-            #     kernel_size=4,
-            #     stride=2,
-            #     padding=1,
-            #     bias=False,
-            # ),
-            # nn.LeakyReLU(0.2, inplace=True),
-            # nn.Conv2d(
-            #     128 // self.depth,
-            #     256 // self.depth,
-            #     kernel_size=4,
-            #     stride=2,
-            #     padding=1,
-            #     bias=False,
-            # ),
-            nn.BatchNorm2d(256 // self.depth),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(
-                self.channels,
-                256 // self.depth,
-                kernel_size=4,
-                stride=2,
-                padding=1,
-                bias=False,
-            ),
-            nn.BatchNorm2d(512 // self.depth),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(
-                256 // self.depth,
-                512 // self.depth,
-                kernel_size=4,
-                stride=2,
-                padding=1,
-                bias=False,
-            ),
-            nn.BatchNorm2d(1024 // self.depth),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(
-                512 // self.depth, 1, kernel_size=4, stride=1, padding=0, bias=False
-            ),
-            nn.Sigmoid(),
-        )
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.layers(x).view(-1)
 
 class ResidualStack(nn.Module):
     def __init__(self, num_hiddens, num_residual_layers, num_residual_hiddens):
@@ -104,6 +43,7 @@ class ResidualStack(nn.Module):
 
         # ResNet V1-style.
         return torch.relu(h)
+
 
 class Encoder(nn.Module):
     def __init__(
@@ -157,6 +97,7 @@ class Encoder(nn.Module):
     def forward(self, x):
         h = self.conv(x)
         return self.residual_stack(h)
+
 
 class Decoder(nn.Module):
     def __init__(
@@ -213,7 +154,8 @@ class Decoder(nn.Module):
         h = self.conv(x)
         h = self.residual_stack(h)
         x_recon = self.upconv(h)
-        return x_recon
+        return F.sigmoid(x_recon)
+
 
 class SonnetExponentialMovingAverage(nn.Module):
     # See: https://github.com/deepmind/sonnet/blob/5cbfdc356962d9b6198d5b63f0826a80acfdf35b/sonnet/src/moving_averages.py#L25.
@@ -235,6 +177,7 @@ class SonnetExponentialMovingAverage(nn.Module):
     def __call__(self, value):
         self.update(value)
         return self.average
+
 
 class VectorQuantizer(nn.Module):
     def __init__(self, embedding_dim, num_embeddings, use_ema, decay, epsilon):
@@ -323,6 +266,7 @@ class VectorQuantizer(nn.Module):
             encoding_indices.view(x.shape[0], -1),
         )
 
+
 class VQVAE(nn.Module):
     def __init__(
         self,
@@ -367,33 +311,39 @@ class VQVAE(nn.Module):
         return (z_quantized, dictionary_loss, commitment_loss, encoding_indices)
 
     def forward(self, x):
-        (z_quantized, dictionary_loss, commitment_loss, _) = self.quantize(x)
+        (z_quantized, dictionary_loss, commitment_loss, encoding_indices) = (
+            self.quantize(x)
+        )
         x_recon = self.decoder(z_quantized)
         return {
             "dictionary_loss": dictionary_loss,
             "commitment_loss": commitment_loss,
             "x_recon": x_recon,
+            "encoding_indices": encoding_indices,
         }
+
 
 class VQVAE_Trainer(pl.LightningModule):
     def __init__(
         self,
+        sample_size=32,
         in_channels=1,
         out_channels=1,
-        num_hiddens=32,
-        num_downsampling_layers=2,
-        num_residual_layers=2,
-        num_residual_hiddens=64,
-        embedding_dim=64,
-        num_embeddings=512,  # 64 embeddings
-        use_ema=False,
+        num_hiddens=64,
+        num_downsampling_layers=4,
+        num_residual_layers=4,
+        num_residual_hiddens=128,
+        embedding_dim=64,  # 32, 64, 128, 256
+        num_embeddings=512,  # 256, 512, 1024, 2048
+        use_ema=True,
         decay=0.99,
         epsilon=1e-5,
-        beta=1,
+        beta=0.25,
         lr=2e-4,
-        weight_decay=1e-5,
+        weight_decay=0.0,
         fid_features=2048,
-        batch_size=64,
+        batch_size=64,  # 128
+        dataset="celeba_hq",
     ):
         super(VQVAE_Trainer, self).__init__()
         self.model = VQVAE(
@@ -411,8 +361,6 @@ class VQVAE_Trainer(pl.LightningModule):
         )
 
         self.beta = beta
-
-        self.disc = Discriminator(1)
         self.save_hyperparameters()
 
     def forward(self, x):
@@ -420,115 +368,88 @@ class VQVAE_Trainer(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x, _ = batch
-        
-        # Generate reconstructions
+
         out = self.model(x)
-        reconstructions = out["x_recon"]
+        recon_error = F.mse_loss(out["x_recon"], x)
 
-        # Train Discriminator
-        disc_opt, gen_opt = self.optimizers()
+        loss = recon_error + self.beta * out["commitment_loss"]
 
-        # Real images
-        real_pred = self.disc(x)
-        real_loss = F.binary_cross_entropy_with_logits(real_pred, torch.ones_like(real_pred))
+        if out["dictionary_loss"] is not None:
+            loss += out["dictionary_loss"]
+            self.log("train_dictionary_loss", out["dictionary_loss"])
 
-        # Reconstructed images
-        fake_pred = self.disc(reconstructions.detach())
-        fake_loss = F.binary_cross_entropy_with_logits(fake_pred, torch.zeros_like(fake_pred))
+        self.log("train_loss", loss)
+        self.log("train_recon_error", recon_error)
+        self.log("train_commitment_loss", out["commitment_loss"])
 
-        # Total discriminator loss
-        disc_loss = (real_loss + fake_loss) / 2
-
-        # Discriminator optimization
-        disc_opt.zero_grad()
-        self.manual_backward(disc_loss)
-        disc_opt.step()
-
-        # Train Generator (VQVAE)
-        gen_pred = self.disc(reconstructions)
-        gen_loss = F.binary_cross_entropy_with_logits(gen_pred, torch.ones_like(gen_pred))
-
-        # Reconstruction loss and commitment loss
-        recon_error = F.mse_loss(reconstructions, x)
-        lpips_loss = self.lpips(x, reconstructions)
-        commitment_loss = out["commitment_loss"]
-
-        # Total generator loss
-        total_gen_loss = recon_error + self.beta * commitment_loss + lpips_loss + gen_loss
-
-        # Generator optimization
-        gen_opt.zero_grad()
-        self.manual_backward(total_gen_loss)
-        gen_opt.step()
-
-        # Logging
-        self.log_dict({
-            "train_disc_loss": disc_loss,
-            "train_gen_loss": total_gen_loss,
-            "train_recon_error": recon_error,
-            "train_commitment_loss": commitment_loss,
-            "train_lpips": lpips_loss
-        })
-
-        return total_gen_loss
+        return loss
 
     def validation_step(self, batch, batch_idx):
         x, _ = batch
 
         out = self.model(x)
-        reconstructions = out["x_recon"]
 
-        recon_error = F.mse_loss(reconstructions, x)
-        lpips_loss = self.lpips(x, reconstructions)
-        commitment_loss = out["commitment_loss"]
+        recon_error = F.mse_loss(out["x_recon"], x)
 
-        total_val_loss = recon_error + self.beta * commitment_loss + lpips_loss
+        loss = recon_error + self.beta * out["commitment_loss"]
 
-        self.log_dict({
-            "val_loss": total_val_loss,
-            "val_recon_error": recon_error,
-            "val_commitment_loss": commitment_loss,
-            "val_lpips": lpips_loss
-        })
+        if out["dictionary_loss"] is not None:
+            loss += out["dictionary_loss"]
+            self.log("val_dictionary_loss", out["dictionary_loss"])
+
+        self.log("val_loss", loss)
+        self.log("val_recon_error", recon_error)
+        self.log("val_commitment_loss", out["commitment_loss"])
 
         if batch_idx == 0:
+            if self.global_step == 0 and batch_idx == 0:
+                self.logger.experiment.log(
+                    {
+                        "original": wandb.Image(
+                            torchvision.utils.make_grid(x[:64], nrow=8),
+                            caption="Real Image",
+                        )
+                    }
+                )
+
             self.logger.experiment.log(
                 {
                     "reconstructed": wandb.Image(
-                        torchvision.utils.make_grid(out["x_recon"]),
-                        caption=f"Epoch {self.current_epoch}, Step {self.global_step}",
-                    ),
-                    # "real": wandb.Image(
-                    #     torchvision.utils.make_grid(x),
-                    #     caption=f"Epoch {self.current_epoch}, Step {self.global_step}",
-                    # ),
+                        torchvision.utils.make_grid(out["x_recon"][:64], nrow=8),
+                        caption=f"Step {self.global_step}",
+                    )
                 }
             )
 
-            # Resize to 299x299
-            x = F.interpolate(x, size=299)
-            x_hat = F.interpolate(out["x_recon"], size=299)
+    def on_test_start(self):
+        self.fid = FrechetInceptionDistance(self.hparams.fid_features).cpu()
 
-            if x.shape[1] == 1:
-                x = x.repeat(1, 3, 1, 1)
-                x_hat = x_hat.repeat(1, 3, 1, 1)
+    def test_step(self, batch, batch_idx):
+        x, _ = batch
 
-            # Convert to u8
-            x = (x * 255).to(torch.uint8).cpu()
-            x_hat = (x_hat * 255).to(torch.uint8).cpu()
+        out = self.model(x)
 
-            fid = FrechetInceptionDistance(self.hparams.fid_features)
+        # Resize to 299x299
+        x = F.interpolate(x, size=299)
+        x_hat = F.interpolate(out["x_recon"], size=299)
 
-            # Compute FID
-            fid.update(x, real=True)
-            fid.update(x_hat, real=False)
+        if x.shape[1] == 1:
+            x = x.repeat(1, 3, 1, 1)
+            x_hat = x_hat.repeat(1, 3, 1, 1)
 
-            self.log("fid", fid.compute())
+        # Convert to uint8
+        x = (x * 255).to(torch.uint8).cpu()
+        x_hat = (x_hat * 255).to(torch.uint8).cpu()
 
-        return total_val_loss
+        # Compute FID
+        self.fid.update(x, real=True)
+        self.fid.update(x_hat, real=False)
+
+        fid_score = self.fid.compute()
+        self.log("fid_score", fid_score)
 
     def configure_optimizers(self):
-        return optim.AdamW(
+        return optim.Adam(
             self.model.parameters(),
             lr=self.hparams.lr,
             amsgrad=True,
@@ -536,37 +457,150 @@ class VQVAE_Trainer(pl.LightningModule):
         )
 
     def train_dataloader(self):
+        if self.hparams.dataset == "mnist":
+            transform = torchvision.transforms.Compose(
+                [
+                    torchvision.transforms.Resize(self.hparams.sample_size),
+                    (
+                        torchvision.transforms.Grayscale()
+                        if self.hparams.in_channels == 1
+                        else torchvision.transforms.Lambda(lambda x: x)
+                    ),
+                    torchvision.transforms.ToTensor(),
+                ]
+            )
+            dataset = torchvision.datasets.MNIST(
+                root="data/mnist", train=True, transform=transform, download=True
+            )
+
+        elif self.hparams.dataset == "cifar10":
+            transform = torchvision.transforms.Compose(
+                [
+                    torchvision.transforms.Resize(self.hparams.sample_size),
+                    torchvision.transforms.ToTensor(),
+                ]
+            )
+            dataset = torchvision.datasets.CIFAR10(
+                root="data/cifar10", train=True, transform=transform, download=True
+            )
+
+        elif self.hparams.dataset == "celeba_hq":
+            transform = torchvision.transforms.Compose(
+                [
+                    torchvision.transforms.Resize(self.hparams.sample_size),
+                    torchvision.transforms.ToTensor(),
+                ]
+            )
+            dataset = torchvision.datasets.ImageFolder(
+                "data/celeba_hq/train", transform=transform
+            )
+
+        else:
+            raise ValueError(f"Unknown dataset: {self.hparams.dataset}")
+
         return torch.utils.data.DataLoader(
-            torchvision.datasets.MNIST(
-                "data",
-                train=True,
-                download=True,
-                transform=torchvision.transforms.Compose(
-                    [
-                        torchvision.transforms.Resize(64),
-                        torchvision.transforms.ToTensor(),
-                    ]
-                ),
-            ),
+            dataset,
             batch_size=self.hparams.batch_size,
             shuffle=True,
+            num_workers=4,
+            pin_memory=True,
+            persistent_workers=True,
         )
 
     def val_dataloader(self):
+        if self.hparams.dataset == "mnist":
+            transform = torchvision.transforms.Compose(
+                [
+                    torchvision.transforms.Resize(self.hparams.sample_size),
+                    torchvision.transforms.ToTensor(),
+                ]
+            )
+            dataset = torchvision.datasets.MNIST(
+                root="data/mnist", train=False, transform=transform, download=True
+            )
+
+        elif self.hparams.dataset == "cifar10":
+            transform = torchvision.transforms.Compose(
+                [
+                    torchvision.transforms.Resize(self.hparams.sample_size),
+                    torchvision.transforms.ToTensor(),
+                ]
+            )
+            dataset = torchvision.datasets.CIFAR10(
+                root="data/cifar10", train=False, transform=transform, download=True
+            )
+
+        elif self.hparams.dataset == "celeba_hq":
+            transform = torchvision.transforms.Compose(
+                [
+                    torchvision.transforms.Resize(self.hparams.sample_size),
+                    torchvision.transforms.ToTensor(),
+                ]
+            )
+            dataset = torchvision.datasets.ImageFolder(
+                "data/celeba_hq/val", transform=transform
+            )
+
+        else:
+            raise ValueError(f"Unknown dataset: {self.hparams.dataset}")
+
         return torch.utils.data.DataLoader(
-            torchvision.datasets.MNIST(
-                "data",
-                train=False,
-                download=True,
-                transform=torchvision.transforms.Compose(
-                    [
-                        torchvision.transforms.Resize(64),
-                        torchvision.transforms.ToTensor(),
-                    ]
-                ),
-            ),
+            dataset,
             batch_size=self.hparams.batch_size,
-            shuffle=False,
+            num_workers=4,
+            pin_memory=True,
+            persistent_workers=True,
+        )
+
+    def test_dataloader(self):
+        if self.hparams.dataset == "mnist":
+            transform = torchvision.transforms.Compose(
+                [
+                    torchvision.transforms.Resize(self.hparams.sample_size),
+                    torchvision.transforms.ToTensor(),
+                ]
+            )
+            dataset = torchvision.datasets.MNIST(
+                root="data/mnist", train=False, transform=transform, download=True
+            )
+            # Return first 1/4
+            dataset = torch.utils.data.Subset(dataset, range(len(dataset) // 16))
+
+        elif self.hparams.dataset == "cifar10":
+            transform = torchvision.transforms.Compose(
+                [
+                    torchvision.transforms.Resize(self.hparams.sample_size),
+                    torchvision.transforms.ToTensor(),
+                ]
+            )
+            dataset = torchvision.datasets.CIFAR10(
+                root="data/cifar10", train=False, transform=transform, download=True
+            )
+            # Return first 1/4
+            dataset = torch.utils.data.Subset(dataset, range(len(dataset) // 16))
+
+        elif self.hparams.dataset == "celeba_hq":
+            transform = torchvision.transforms.Compose(
+                [
+                    torchvision.transforms.Resize(self.hparams.sample_size),
+                    torchvision.transforms.ToTensor(),
+                ]
+            )
+            dataset = torchvision.datasets.ImageFolder(
+                "data/celeba_hq/val", transform=transform
+            )
+            # Return first 1/4
+            dataset = torch.utils.data.Subset(dataset, range(len(dataset) // 4))
+
+        else:
+            raise ValueError(f"Unknown dataset: {self.hparams.dataset}")
+
+        return torch.utils.data.DataLoader(
+            dataset,
+            batch_size=self.hparams.batch_size,
+            num_workers=4,
+            pin_memory=True,
+            persistent_workers=True,
         )
 
 
@@ -574,20 +608,18 @@ def main():
     # torch.set_float32_matmul_precision("high")
     vae = VQVAE_Trainer()
     wandb_logger = WandbLogger(
-        name="mnist",
+        name="vqvae",
+        save_dir="./vqvae/logs",
         project="vq-vae",
         save_code=True,
         log_model=True,
-        save_dir="./projects/custom/vq-vae/logs",
     )
-    wandb_logger.watch(vae.model)
+    wandb_logger.watch(vae.model, log="all", log_freq=100, log_graph=True)
     trainer = pl.Trainer(
         logger=wandb_logger,
         check_val_every_n_epoch=1,
-        default_root_dir="./projects/custom/vq-vae/logs",
-        max_steps=10_000,
-        enable_checkpointing=True,
-        # precision="bf16-mixed"
+        default_root_dir="./vqvae/logs",
+        max_steps=100_000,  # 250_000
     )
     trainer.fit(vae)
 

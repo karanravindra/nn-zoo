@@ -75,5 +75,6 @@
     "*.studiorc": "shellscript"
   },
   "files.enableTrash": false,
-  "explorer.excludeGitIgnore": true
+  "explorer.excludeGitIgnore": false,
+  "python.analysis.typeCheckingMode": "basic"
 }
