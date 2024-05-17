@@ -1,7 +1,7 @@
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 import lightning.pytorch as pl
-from ._default import DefaultDataModuleConfig
+from ._default import DefaultDataModuleConfig, DefaultDataModule
 from dataclasses import dataclass
 
 
@@ -10,12 +10,16 @@ class CIFARDataModuleConfig(DefaultDataModuleConfig):
     use_cifar100: bool
 
 
-class CIFARDataModule(pl.LightningDataModule):
+class CIFARDataModule(DefaultDataModule):
     def __init__(self, config: CIFARDataModuleConfig):
-        super().__init__()
+        super().__init__(config)
         self.config = config
 
         self.dataset = datasets.CIFAR10 if self.config.use_cifar100 else datasets.CIFAR100
+
+    @property
+    def num_classes(self):
+        return 100 if self.config.use_cifar100 else 10
         
     def prepare_data(self):
         self.dataset(self.config.data_dir, train=True, download=True)

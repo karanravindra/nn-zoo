@@ -24,27 +24,25 @@ import torchvision.transforms as transforms
 def main():
     config = MNISTDataModuleConfig(
         data_dir="data",
-        batch_size=64,
+        batch_size=128,
         num_workers=4,
         pin_memory=True,
         persistent_workers=True,
-        transforms=transforms.Compose([transforms.ToTensor()]),
+        transforms=transforms.Compose([transforms.ToTensor(), transforms.Resize((32, 32))]),
         use_qmnist=False,
     )
 
     dm = MNISTDataModule(config)
 
-    model = nn.Sequential(
-        nn.Flatten(),
-        nn.Linear(28 * 28, 10),
-    )
+    lenetConfig = LeNetConfig(version=5)
+    model = LeNet(lenetConfig)
 
     classifierConfig = ClassifierConfig(
         model=model,
         dm=dm,
         optim="SGD",
         optim_args={
-            "lr": 0.1,
+            "lr": 0.01,
             "momentum": 0.9,
             "weight_decay": 0,
         },
@@ -59,13 +57,13 @@ def main():
         log_model=True,
     )
 
-    logger.watch(model, log="all", log_freq=10, log_graph=True)
+    logger.watch(model, log="all", log_freq=100, log_graph=True)
 
     trainer = pl.Trainer(
         logger=logger,
-        max_epochs=50,
         default_root_dir="projects/1-mnist/logs",
-        val_check_interval=0.5,
+        max_epochs=100,
+        check_val_every_n_epoch=1,
     )
 
     trainer.fit(classifier)

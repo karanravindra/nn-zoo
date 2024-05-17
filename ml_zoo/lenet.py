@@ -72,6 +72,7 @@ class LeNet(torch.nn.Module):
 if __name__ == "__main__":
     config = LeNetConfig(
         version=4,
+        paddings=[2, 0, 0],
     )
     model = LeNet(config)
-    summary(model, input_size=(1, 1, 32, 32))
+    summary(model, input_size=(1, 1, 28, 28))
