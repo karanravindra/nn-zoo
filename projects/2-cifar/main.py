@@ -75,38 +75,12 @@ def main(model: nn.Module, run_name: str = "cifar"):
 
 if __name__ == "__main__":
     models = {
-        "three layer fcn": nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(3 * 32 * 32, 256),
-            nn.ReLU(),
-            nn.Linear(256, 128),
-            nn.ReLU(),
-            nn.Linear(128, 10),
-        ),
-        "lenet 4": LeNet(
-            LeNetConfig(
-                version=4,
-                input_channels=3,
-            )
-        ),
-        "lenet 5": LeNet(
-            LeNetConfig(
-                version=5,
-                input_channels=3,
-            )
-        ),
-        "cnn": LeNet(
-            LeNetConfig(
-                version=None,
-                feature_dims=[3, 12, 36],
-                vectors=[36 * 5 * 5, 120, 84, 10],
-            )
-        ),
-        "cnn big": LeNet(
+        "cnn big w dropout": LeNet(
             LeNetConfig(
                 version=None,
                 feature_dims=[3, 24, 72],
                 vectors=[72 * 5 * 5, 240, 168, 10],
+                dropouts=[0.5, 0., 0., 0.],
             )
         ),
     }
