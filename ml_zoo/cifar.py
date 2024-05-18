@@ -15,7 +15,7 @@ class CIFARDataModule(DefaultDataModule):
         super().__init__(config)
         self.config = config
 
-        self.dataset = datasets.CIFAR10 if self.config.use_cifar100 else datasets.CIFAR100
+        self.dataset = datasets.CIFAR100 if self.config.use_cifar100 else datasets.CIFAR10
 
     @property
     def num_classes(self):

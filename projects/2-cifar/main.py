@@ -1,6 +1,14 @@
 import sys
 import os
 
+import lightning.pytorch as pl
+from lightning.pytorch.loggers import WandbLogger
+
+import torch.nn as nn
+import torchvision.transforms as transforms
+
+from torchinfo import summary
+
 sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 
 from ml_zoo import (
@@ -12,14 +20,8 @@ from ml_zoo import (
     LeNetConfig,
 )
 
-import lightning.pytorch as pl
-from lightning.pytorch.loggers import WandbLogger
 
-import torch.nn as nn
-import torchvision.transforms as transforms
-
-
-def main(model: nn.Module, project_name: str = "cifar"):
+def main(model: nn.Module, run_name: str = "cifar"):
     config = CIFARDataModuleConfig(
         data_dir="data",
         batch_size=128,
@@ -37,7 +39,7 @@ def main(model: nn.Module, project_name: str = "cifar"):
         dm=dm,
         optim="SGD",
         optim_args={
-            "lr": 0.02,
+            "lr": 0.01,
             "momentum": 0.9,
             "weight_decay": 0,
         },
@@ -47,7 +49,7 @@ def main(model: nn.Module, project_name: str = "cifar"):
     classifier = Classifier(classifierConfig)
 
     logger = WandbLogger(
-        name=project_name,
+        name=run_name,
         project="cifar",
         dir="projects/2-cifar/logs",
         save_dir="projects/2-cifar/logs",
@@ -55,6 +57,8 @@ def main(model: nn.Module, project_name: str = "cifar"):
     )
 
     logger.watch(model, log="all", log_freq=100, log_graph=True)
+
+    summary(model, input_size=(1, 3, 32, 32))
 
     trainer = pl.Trainer(
         logger=logger,
@@ -66,19 +70,11 @@ def main(model: nn.Module, project_name: str = "cifar"):
     trainer.fit(classifier)
     trainer.test(classifier)
 
+    logger.experiment.finish()
+
 
 if __name__ == "__main__":
     models = {
-        "one layer fcn": nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(3 * 32 * 32, 10),
-        ),
-        "two layer fcn": nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(3 * 32 * 32, 128),
-            nn.ReLU(),
-            nn.Linear(128, 10),
-        ),
         "three layer fcn": nn.Sequential(
             nn.Flatten(),
             nn.Linear(3 * 32 * 32, 256),
@@ -87,17 +83,30 @@ if __name__ == "__main__":
             nn.ReLU(),
             nn.Linear(128, 10),
         ),
-        "lenet 1": LeNet(LeNetConfig(version=1)),
         "lenet 4": LeNet(
             LeNetConfig(
                 version=4,
-                paddings=[2, 0, 0],
+                input_channels=3,
             )
         ),
         "lenet 5": LeNet(
             LeNetConfig(
                 version=5,
-                paddings=[2, 0, 0],
+                input_channels=3,
+            )
+        ),
+        "cnn": LeNet(
+            LeNetConfig(
+                version=None,
+                feature_dims=[3, 12, 36],
+                vectors=[36 * 5 * 5, 120, 84, 10],
+            )
+        ),
+        "cnn big": LeNet(
+            LeNetConfig(
+                version=None,
+                feature_dims=[3, 24, 72],
+                vectors=[72 * 5 * 5, 240, 168, 10],
             )
         ),
     }

@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 @dataclass
 class LeNetConfig:
     version: Literal[1, 4, 5] | None
+    input_channels: int | None = 1
 
     feature_dims: List[int] = field(default_factory=lambda: [1, 4, 12])
     kernel_sizes: List[int] = field(default_factory=lambda: [5, 5, 5])
@@ -23,16 +24,16 @@ class LeNetConfig:
     vectors: List[int] = field(default_factory=lambda: [192, 10])
 
     def __post_init__(self):
-        if self.version == 1:
-            self.feature_dims = [1, 4, 12]
+        if self.version == 1 and self.input_channels is not None:
+            self.feature_dims = [self.input_channels, 4, 12]
             self.vectors = [192, 10]
 
-        if self.version == 4:
-            self.feature_dims = [1, 6, 12]
+        if self.version == 4 and self.input_channels is not None:
+            self.feature_dims = [self.input_channels, 6, 12]
             self.vectors = [12 * 5 * 5, 120, 10]
 
-        if self.version == 5:
-            self.feature_dims = [1, 6, 16]
+        if self.version == 5 and self.input_channels is not None:
+            self.feature_dims = [self.input_channels, 6, 16]
             self.vectors = [16 * 5 * 5, 120, 84, 10]
 
 
@@ -77,7 +78,6 @@ class LeNet(torch.nn.Module):
 
             classifier_layers.append(nn.Linear(in_features, out_features))
             classifier_layers.append(self.config.activation)
-        print(classifier_layers)
         return nn.ModuleList(classifier_layers[:-1])
 
     def forward(self, x):
@@ -90,4 +90,4 @@ if __name__ == "__main__":
     )
     model = LeNet(config)
     print(model)
-    summary(model, input_size=(1, 1, 28, 28))
+    summary(model, input_size=(128, 1, 28, 28))
