@@ -1,3 +1,9 @@
+.dotnet
+.lightning_studio
+.netrc
+.vscode-server
+.idea
+
 .venv
 data
 /**/logs
