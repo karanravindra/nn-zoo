@@ -18,6 +18,7 @@ class LeNetConfig:
         default_factory=lambda: [nn.AvgPool2d, nn.AvgPool2d, nn.AvgPool2d]
     )
     activation: nn.Module = nn.Tanh()
+    dropouts: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
 
     vectors: List[int] = field(default_factory=lambda: [192, 10])
 
@@ -40,39 +41,53 @@ class LeNet(torch.nn.Module):
         super().__init__()
         self.config = config
 
+        features = self._make_feature_layers()
+        classifier = self.make_classifier_layers()
+
+        # Combine the feature layers and classifier layers and name the layers
+        layers = features + classifier
+        self.layers = nn.Sequential(*layers)            
+
+    def _make_feature_layers(self):
         feature_layers = []
         for i, (in_channels, out_channels) in enumerate(
-            zip(config.feature_dims[:-1], config.feature_dims[1:])
+            zip(self.config.feature_dims[:-1], self.config.feature_dims[1:])
         ):
             feature_layers.append(
                 nn.Conv2d(
                     in_channels,
                     out_channels,
-                    config.kernel_sizes[i],
-                    config.strides[i],
-                    config.paddings[i],
+                    self.config.kernel_sizes[i],
+                    self.config.strides[i],
+                    self.config.paddings[i],
                 )
             )
-            feature_layers.append(config.activation)
-            feature_layers.append(config.poolings[i](config.pooling_sizes[i]))
-        self.features = nn.Sequential(*feature_layers)
+            feature_layers.append(self.config.activation)
+            feature_layers.append(self.config.poolings[i](self.config.pooling_sizes[i]))
+        return nn.ModuleList(feature_layers)
 
-        classifier_layers = [nn.Flatten()]
-        for in_features, out_features in zip(config.vectors[:-1], config.vectors[1:]):
+    def make_classifier_layers(self):
+        classifier_layers = []
+        classifier_layers.append(nn.Flatten())
+        for in_features, out_features, dropout in zip(
+            self.config.vectors[:-1], self.config.vectors[1:], self.config.dropouts
+        ):
+            if dropout > 0:
+                classifier_layers.append(nn.Dropout(dropout))
+
             classifier_layers.append(nn.Linear(in_features, out_features))
-            classifier_layers.append(config.activation)
-        self.classifier = nn.Sequential(*classifier_layers[:-1])
+            classifier_layers.append(self.config.activation)
+        print(classifier_layers)
+        return nn.ModuleList(classifier_layers[:-1])
 
     def forward(self, x):
-        x = self.features(x)
-        x = self.classifier(x)
-        return x
+        return self.layers(x)
 
 
 if __name__ == "__main__":
     config = LeNetConfig(
-        version=4,
-        paddings=[2, 0, 0],
+        version=1,
     )
     model = LeNet(config)
+    print(model)
     summary(model, input_size=(1, 1, 28, 28))

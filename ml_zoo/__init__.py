@@ -9,8 +9,8 @@ __package__ = "ml_zoo"
 __all__ = [
     "DefaultDataModuleConfig",
     "DefaultDataModule",
-    "CIFARDataModule",
-    "CIFARDataModuleConfig",
+    "MNISTDataModule",
+    "MNISTDataModuleConfig",
     "Classifier",
     "ClassifierConfig",
     "LeNet",

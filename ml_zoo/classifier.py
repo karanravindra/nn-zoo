@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import lightning.pytorch as pl
 from torchmetrics.classification import Accuracy
-import torchvision
+import wandb
 from dataclasses import dataclass
 from typing import Literal
 
@@ -16,6 +16,7 @@ class ClassifierConfig:
     dm: DefaultDataModule
     optim: Literal["SGD", "Adam", "AdamW"] | torch.optim.Optimizer
     optim_args: dict
+    _log_test_table: bool = False
 
     def __post_init__(self):
         assert isinstance(self.model, nn.Module)
@@ -49,9 +50,13 @@ class Classifier(pl.LightningModule):
         config = {
             "model": self.model.__class__.__name__,
             "model_config": {
-                k: v
-                for k, v in self.config.model.__dict__.items()
-                if not k.startswith("_")
+                **{
+                    k: v
+                    for k, v in self.config.model.__dict__.items()
+                    if not k.startswith("_")
+                },
+                "num_classes": self.config.dm.num_classes,
+                "num_params": sum(p.numel() for p in self.model.parameters()),
             },
             "optim": self.config.optim,
             "optim_args": self.config.optim_args,
@@ -98,6 +103,12 @@ class Classifier(pl.LightningModule):
 
         return loss
 
+    def on_test_start(self):
+        if self.config._log_test_table:
+            self.testing_table = wandb.Table(
+                columns=["y_true", "y_pred", "probs"]
+            )
+
     def test_step(self, batch, batch_idx):
         x, y = batch
 
@@ -109,7 +120,24 @@ class Classifier(pl.LightningModule):
         self.log("test/loss", loss)
         self.log("test/acc", acc)
 
+        if self.config._log_test_table:
+            # Add row to testing table if wrong
+            y_pred = torch.softmax(y_hat, dim=1)
+            y_pred = torch.argmax(y_hat, dim=1)
+            wrong = y != y_pred
+            for i in range(x.shape[0]):
+                if wrong[i]:
+                    self.testing_table.add_data(
+                        y[i].item(),
+                        y_pred[i].item(),
+                        y_hat[i].cpu().detach().numpy(),
+                    )
+
         return loss
+
+    def on_test_end(self):
+        if self.config._log_test_table:
+            self.logger.experiment.log({"test/table": self.testing_table})
 
     def configure_optimizers(self):
         optimizer = self.config._optim(self.parameters(), **self.config.optim_args)
