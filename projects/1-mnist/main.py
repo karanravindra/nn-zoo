@@ -21,7 +21,7 @@ from ml_zoo import (
 )
 
 
-def main(model: nn.Module, project_name: str = "mnist"):
+def main(model: nn.Module, run_name: str = "mnist"):
     # Create DataModule
     dm_config = MNISTDataModuleConfig(
         data_dir="data",
@@ -30,9 +30,9 @@ def main(model: nn.Module, project_name: str = "mnist"):
         pin_memory=True,
         persistent_workers=True,
         transforms=transforms.Compose(
-            [transforms.ToTensor()] #, transforms.Resize((32, 32))]
+            [transforms.ToTensor()]  # , transforms.Resize((32, 32))]
         ),
-        use_qmnist=False,
+        use_qmnist=True,
     )
 
     dm = MNISTDataModule(dm_config)
@@ -42,15 +42,15 @@ def main(model: nn.Module, project_name: str = "mnist"):
         model=model,
         dm=dm,
         optim="SGD",
-        optim_args={"lr": 0.1, "momentum": 0.9},
+        optim_args={"lr": 0.01, "momentum": 0.9},
     )
 
     classifier = Classifier(classifier_config)
 
     # Log model
     logger = WandbLogger(
-        name=project_name,
-        project="mnist",
+        name=run_name,
+        project="test",
         dir="projects/1-mnist/logs",
         save_dir="projects/1-mnist/logs",
         log_model=True,
@@ -97,7 +97,7 @@ if __name__ == "__main__":
         ),
         "lenet 1": LeNet(LeNetConfig(version=1)),
         # "lenet 4": LeNet(LeNetConfig(version=4)),
-        # "lenet 5 dropout": LeNet(LeNetConfig(version=5)),
+        # "lenet 5 small lr": LeNet(LeNetConfig(version=5)),
     }
 
     for name, model in models.items():
