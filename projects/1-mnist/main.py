@@ -30,7 +30,7 @@ def main(model: nn.Module, run_name: str = "mnist"):
         pin_memory=True,
         persistent_workers=True,
         transforms=transforms.Compose(
-            [transforms.ToTensor()]  # , transforms.Resize((32, 32))]
+            [transforms.ToTensor(), transforms.Resize((32, 32))]
         ),
         use_qmnist=True,
     )
@@ -50,7 +50,7 @@ def main(model: nn.Module, run_name: str = "mnist"):
     # Log model
     logger = WandbLogger(
         name=run_name,
-        project="test",
+        project="qmnist",
         dir="projects/1-mnist/logs",
         save_dir="projects/1-mnist/logs",
         log_model=True,
@@ -67,7 +67,7 @@ def main(model: nn.Module, run_name: str = "mnist"):
 
     logger.watch(model, log="all", log_freq=100, log_graph=True)
 
-    summary(model, input_size=(1, 1, 28, 28))
+    summary(model, input_size=(1, 1, 32, 32))
 
     trainer.fit(classifier)
     trainer.test(classifier)
@@ -77,27 +77,28 @@ def main(model: nn.Module, run_name: str = "mnist"):
 
 if __name__ == "__main__":
     models = {
-        "one layer fcn": nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(28 * 28, 10),
-        ),
-        "two layer fcn": nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(28 * 28, 128),
-            nn.Tanh(),
-            nn.Linear(128, 10),
-        ),
-        "three layer fcn": nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(28 * 28, 256),
-            nn.Tanh(),
-            nn.Linear(256, 128),
-            nn.Tanh(),
-            nn.Linear(128, 10),
-        ),
-        "lenet 1": LeNet(LeNetConfig(version=1)),
+        # "one layer fcn": nn.Sequential(
+        #     nn.Flatten(),
+        #     nn.Linear(28 * 28, 10),
+        # ),
+        # "two layer fcn": nn.Sequential(
+        #     nn.Flatten(),
+        #     nn.Linear(28 * 28, 128),
+        #     nn.Tanh(),
+        #     nn.Linear(128, 10),
+        # ),
+        # "three layer fcn": nn.Sequential(
+        #     nn.Flatten(),
+        #     nn.Linear(28 * 28, 256),
+        #     nn.Tanh(),
+        #     nn.Linear(256, 128),
+        #     nn.Tanh(),
+        #     nn.Linear(128, 10),
+        # ),
+        # "lenet 1": LeNet(LeNetConfig(version=1)),
         # "lenet 4": LeNet(LeNetConfig(version=4)),
-        # "lenet 5 small lr": LeNet(LeNetConfig(version=5)),
+        # "lenet 5": LeNet(LeNetConfig(version=5)),
+        "lenet 5 reg": LeNet(LeNetConfig(version=5, dropouts=[0.1, 0, 0])),
     }
 
     for name, model in models.items():

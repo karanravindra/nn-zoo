@@ -4,7 +4,7 @@
 .vscode-server
 .idea
 
-.venv
+venv
 data
 /**/logs
 /**/__pycache__
