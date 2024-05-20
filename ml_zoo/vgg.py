@@ -94,7 +94,7 @@ class VGG(nn.Module):
         return self.layers(x)
     
 if __name__ == "__main__":
-    config = VGGConfig(version=19, sample_size=(3, 32, 32), global_pooling_dim=1, vector_dim=512, num_classes=10)
+    config = VGGConfig(version=11, sample_size=(3, 32, 32), global_pooling_dim=1, vector_dim=512, num_classes=10)
     model = VGG(config)
     summary(model, input_size=(1, *config.sample_size))
     print(model(torch.randn(1, *config.sample_size)).shape)

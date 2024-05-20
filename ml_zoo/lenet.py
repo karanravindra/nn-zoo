@@ -86,8 +86,15 @@ class LeNet(torch.nn.Module):
 
 if __name__ == "__main__":
     config = LeNetConfig(
-        version=1,
-    )
+                version=None,
+                feature_dims=[3, 32, 64, 128],
+                kernel_sizes=[3, 3, 3, 3],
+                paddings=[1, 1, 1, 1],
+                vectors=[128 * 4 * 4, 240, 168, 10],
+                dropouts=[0.5, 0., 0., 0., 0.],
+                activation=nn.ReLU(),
+                poolings=[nn.MaxPool2d, nn.MaxPool2d, nn.MaxPool2d, nn.MaxPool2d],
+            )
     model = LeNet(config)
     print(model)
-    summary(model, input_size=(128, 1, 28, 28))
+    summary(model, input_size=(64, 3, 32, 32))
