@@ -78,13 +78,13 @@ if __name__ == "__main__":
         "cnn big w max": LeNet(
             LeNetConfig(
                 version=None,
-                feature_dims=[3, 64, 128, 256, 512],
-                kernel_sizes=[3, 3, 3, 3, 3],
-                paddings=[1, 1, 1, 1, 1],
-                pooling_sizes=[2, 2, 2, 2, 2],
-                strides=[1, 1, 1, 1, 1],
-                vectors=[512 * 2 * 2, 256, 10],
-                dropouts=[0.5, 0.5, 0., 0.],
+                feature_dims=[3, 64, 128, 256, 512, 512],
+                kernel_sizes=[3, 3, 3, 3, 3, 3],
+                paddings=[1, 1, 1, 1, 1, 1],
+                pooling_sizes=[2, 2, 2, 2, 2, 2],
+                strides=[1, 1, 1, 1, 1, 1],
+                vectors=[512, 256, 10],
+                dropouts=[0.5, 0.5, 0],
                 activation=nn.ReLU(),
                 poolings=[nn.MaxPool2d, nn.MaxPool2d, nn.MaxPool2d, nn.MaxPool2d, nn.MaxPool2d],
             )
