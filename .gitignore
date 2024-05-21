@@ -1,7 +1,8 @@
 .dotnet
 .lightning_studio
 .netrc
-.vscode-server
+.vscode-server/
+.vscode-server-insiders/
 .idea
 
 venv

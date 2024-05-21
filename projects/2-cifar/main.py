@@ -75,7 +75,7 @@ def main(model: nn.Module, run_name: str = "cifar"):
 
 if __name__ == "__main__":
     models = {
-        "cnn big w max": LeNet(
+        "vgg11": LeNet(
             LeNetConfig(
                 version=None,
                 feature_dims=[3, 64, 128, 256, 512, 512],
