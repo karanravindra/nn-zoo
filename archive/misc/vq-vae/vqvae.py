@@ -329,20 +329,20 @@ class VQVAE_Trainer(pl.LightningModule):
         sample_size=32,
         in_channels=1,
         out_channels=1,
-        num_hiddens=64,
-        num_downsampling_layers=4,
+        num_hiddens=32,
+        num_downsampling_layers=2,
         num_residual_layers=4,
-        num_residual_hiddens=128,
-        embedding_dim=64,  # 32, 64, 128, 256
-        num_embeddings=512,  # 256, 512, 1024, 2048
+        num_residual_hiddens=64,
+        embedding_dim=4,  # 32, 64, 128, 256
+        num_embeddings=16,  # 256, 512, 1024, 2048
         use_ema=True,
         decay=0.99,
         epsilon=1e-5,
         beta=0.25,
-        lr=2e-4,
-        weight_decay=0.0,
+        lr=1e-3,
+        weight_decay=0.01,
         fid_features=2048,
-        batch_size=64,  # 128
+        batch_size=128,
         dataset="celeba_hq",
     ):
         super(VQVAE_Trainer, self).__init__()
@@ -449,7 +449,7 @@ class VQVAE_Trainer(pl.LightningModule):
         self.log("fid_score", fid_score)
 
     def configure_optimizers(self):
-        return optim.Adam(
+        return optim.AdamW(
             self.model.parameters(),
             lr=self.hparams.lr,
             amsgrad=True,
@@ -619,7 +619,7 @@ def main():
         logger=wandb_logger,
         check_val_every_n_epoch=1,
         default_root_dir="./vqvae/logs",
-        max_steps=100_000,  # 250_000
+        max_epochs=10,
     )
     trainer.fit(vae)
 

@@ -18,7 +18,7 @@ class ResNetConfig:
 
     dropouts: float = 0.0
 
-    pooling: Literal["max", "avg"] = "avg"
+    pooling: Literal["max", "avg"] = "max"
     activation: nn.Module = nn.ReLU()
 
     def __post_init__(self):
