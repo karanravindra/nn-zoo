@@ -9,7 +9,6 @@ from pytorch_lightning.loggers import WandbLogger
 import wandb
 from torchmetrics.image.fid import FrechetInceptionDistance
 
-
 class ResidualStack(nn.Module):
     def __init__(self, num_hiddens, num_residual_layers, num_residual_hiddens):
         super().__init__()
@@ -43,7 +42,6 @@ class ResidualStack(nn.Module):
 
         # ResNet V1-style.
         return torch.relu(h)
-
 
 class Encoder(nn.Module):
     def __init__(
@@ -97,7 +95,6 @@ class Encoder(nn.Module):
     def forward(self, x):
         h = self.conv(x)
         return self.residual_stack(h)
-
 
 class Decoder(nn.Module):
     def __init__(
@@ -156,7 +153,6 @@ class Decoder(nn.Module):
         x_recon = self.upconv(h)
         return F.sigmoid(x_recon)
 
-
 class SonnetExponentialMovingAverage(nn.Module):
     # See: https://github.com/deepmind/sonnet/blob/5cbfdc356962d9b6198d5b63f0826a80acfdf35b/sonnet/src/moving_averages.py#L25.
     # They do *not* use the exponential moving average updates described in Appendix A.1
@@ -177,7 +173,6 @@ class SonnetExponentialMovingAverage(nn.Module):
     def __call__(self, value):
         self.update(value)
         return self.average
-
 
 class VectorQuantizer(nn.Module):
     def __init__(self, embedding_dim, num_embeddings, use_ema, decay, epsilon):
@@ -266,7 +261,6 @@ class VectorQuantizer(nn.Module):
             encoding_indices.view(x.shape[0], -1),
         )
 
-
 class VQVAE(nn.Module):
     def __init__(
         self,
@@ -322,27 +316,26 @@ class VQVAE(nn.Module):
             "encoding_indices": encoding_indices,
         }
 
-
 class VQVAE_Trainer(pl.LightningModule):
     def __init__(
         self,
-        sample_size=32,
-        in_channels=1,
-        out_channels=1,
-        num_hiddens=32,
+        sample_size=128,
+        in_channels=3,
+        out_channels=3,
+        num_hiddens=64,
         num_downsampling_layers=2,
         num_residual_layers=4,
-        num_residual_hiddens=64,
-        embedding_dim=4,  # 32, 64, 128, 256
-        num_embeddings=16,  # 256, 512, 1024, 2048
+        num_residual_hiddens=128,
+        embedding_dim=32,  # 32, 64, 128, 256
+        num_embeddings=2048,  # 256, 512, 1024, 2048
         use_ema=True,
         decay=0.99,
         epsilon=1e-5,
         beta=0.25,
-        lr=1e-3,
+        lr=4e-4,
         weight_decay=0.01,
         fid_features=2048,
-        batch_size=128,
+        batch_size=64,
         dataset="celeba_hq",
     ):
         super(VQVAE_Trainer, self).__init__()
@@ -619,7 +612,7 @@ def main():
         logger=wandb_logger,
         check_val_every_n_epoch=1,
         default_root_dir="./vqvae/logs",
-        max_epochs=10,
+        max_epochs=50,
     )
     trainer.fit(vae)
 
