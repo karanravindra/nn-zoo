@@ -9,6 +9,8 @@ from typing import Literal
 
 from ._default import DefaultDataModule
 
+__all__ = ["ClassifierConfig", "Classifier"]
+
 
 @dataclass
 class ClassifierConfig:
@@ -105,9 +107,7 @@ class Classifier(pl.LightningModule):
 
     def on_test_start(self):
         if self.config._log_test_table:
-            self.testing_table = wandb.Table(
-                columns=["y_true", "y_pred", "probs"]
-            )
+            self.testing_table = wandb.Table(columns=["y_true", "y_pred", "probs"])
 
     def test_step(self, batch, batch_idx):
         x, y = batch

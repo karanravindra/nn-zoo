@@ -4,6 +4,8 @@ import lightning.pytorch as pl
 from ._default import DefaultDataModuleConfig, DefaultDataModule
 from dataclasses import dataclass
 
+__all__ = ["CelebAHQDataModuleConfig", "CelebAHQDataModule"]
+
 
 @dataclass
 class CelebAHQDataModuleConfig(DefaultDataModuleConfig):
@@ -27,10 +29,12 @@ class CelebAHQDataModule(DefaultDataModule):
     def setup(self, stage=None):
         if stage == "fit" or stage is None:
             self.train_dataset = self.dataset(
-                self.config.data_dir+"/celeba_hq/train", transform=self.config.transforms
+                self.config.data_dir + "/celeba_hq/train",
+                transform=self.config.transforms,
             )
             self.val_dataset = self.dataset(
-                self.config.data_dir+"/celeba_hq/val", transform=self.config.transforms
+                self.config.data_dir + "/celeba_hq/val",
+                transform=self.config.transforms,
             )
 
     def train_dataloader(self):

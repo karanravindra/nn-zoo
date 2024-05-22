@@ -2,6 +2,8 @@ from torchvision.transforms import Compose
 from dataclasses import dataclass
 import lightning.pytorch as pl
 
+__all__ = ["DefaultDataModuleConfig", "DefaultDataModule"]
+
 
 @dataclass
 class DefaultDataModuleConfig:
@@ -11,6 +13,7 @@ class DefaultDataModuleConfig:
     num_workers: int
     persistent_workers: bool
     pin_memory: bool
+
 
 class DefaultDataModule(pl.LightningDataModule):
     def __init__(self, config: DefaultDataModuleConfig):
@@ -35,4 +38,3 @@ class DefaultDataModule(pl.LightningDataModule):
     @property
     def num_classes(self) -> int:
         raise NotImplementedError
-        

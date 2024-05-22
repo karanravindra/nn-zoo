@@ -4,6 +4,8 @@ import torch.nn as nn
 from torchinfo import summary
 from dataclasses import dataclass, field
 
+__all__ = ["LeNetConfig", "LeNet"]
+
 
 @dataclass
 class LeNetConfig:
@@ -48,7 +50,7 @@ class LeNet(torch.nn.Module):
 
         # Combine the feature layers and classifier layers and name the layers
         layers = features + classifier
-        self.layers = nn.Sequential(*layers)            
+        self.layers = nn.Sequential(*layers)
 
     def _make_feature_layers(self):
         feature_layers = []
@@ -87,15 +89,15 @@ class LeNet(torch.nn.Module):
 
 if __name__ == "__main__":
     config = LeNetConfig(
-                version=None,
-                feature_dims=[3, 32, 64, 128],
-                kernel_sizes=[3, 3, 3, 3],
-                paddings=[1, 1, 1, 1],
-                vectors=[128 * 4 * 4, 240, 168, 10],
-                dropouts=[0.5, 0., 0., 0., 0.],
-                activation=nn.ReLU(),
-                poolings=[nn.MaxPool2d, nn.MaxPool2d, nn.MaxPool2d, nn.MaxPool2d],
-            )
+        version=None,
+        feature_dims=[3, 32, 64, 128],
+        kernel_sizes=[3, 3, 3, 3],
+        paddings=[1, 1, 1, 1],
+        vectors=[128 * 4 * 4, 240, 168, 10],
+        dropouts=[0.5, 0.0, 0.0, 0.0, 0.0],
+        activation=nn.ReLU(),
+        poolings=[nn.MaxPool2d, nn.MaxPool2d, nn.MaxPool2d, nn.MaxPool2d],
+    )
     model = LeNet(config)
     print(model)
     summary(model, input_size=(64, 3, 32, 32))

@@ -4,6 +4,9 @@ import torch.nn as nn
 from torchinfo import summary
 from dataclasses import dataclass
 
+__all__ = ["VGGConfig", "VGG"]
+
+
 @dataclass
 class VGGConfig:
     version: Literal[11, 13, 16, 19] | None = 11
@@ -25,22 +28,39 @@ class VGGConfig:
         if self.version == 11:
             self.features = (64, 128, 256, 512, 512)
             self.num_features = (1, 1, 2, 2, 2)
-            self.vectors = (self.features[-1] * self.global_pooling_dim * self.global_pooling_dim, self.vector_dim, self.vector_dim)
+            self.vectors = (
+                self.features[-1] * self.global_pooling_dim * self.global_pooling_dim,
+                self.vector_dim,
+                self.vector_dim,
+            )
 
         if self.version == 13:
             self.features = (64, 128, 256, 512, 512)
             self.num_features = (2, 2, 2, 2, 2)
-            self.vectors = (self.features[-1] * self.global_pooling_dim * self.global_pooling_dim, self.vector_dim, self.vector_dim)
+            self.vectors = (
+                self.features[-1] * self.global_pooling_dim * self.global_pooling_dim,
+                self.vector_dim,
+                self.vector_dim,
+            )
 
         if self.version == 16:
             self.features = (64, 128, 256, 512, 512)
             self.num_features = (2, 2, 3, 3, 3)
-            self.vectors = (self.features[-1] * self.global_pooling_dim * self.global_pooling_dim, self.vector_dim, self.vector_dim)
+            self.vectors = (
+                self.features[-1] * self.global_pooling_dim * self.global_pooling_dim,
+                self.vector_dim,
+                self.vector_dim,
+            )
 
         if self.version == 19:
             self.features = (64, 128, 256, 512, 512)
             self.num_features = (2, 2, 4, 4, 4)
-            self.vectors = (self.features[-1] * self.global_pooling_dim * self.global_pooling_dim, self.vector_dim, self.vector_dim)
+            self.vectors = (
+                self.features[-1] * self.global_pooling_dim * self.global_pooling_dim,
+                self.vector_dim,
+                self.vector_dim,
+            )
+
 
 class VGG(nn.Module):
     def __init__(self, config: VGGConfig):
@@ -89,12 +109,19 @@ class VGG(nn.Module):
         classifier_layers.append(nn.Linear(in_features, self.config.num_classes))
 
         return classifier_layers
-    
+
     def forward(self, x):
         return self.layers(x)
-    
+
+
 if __name__ == "__main__":
-    config = VGGConfig(version=11, sample_size=(3, 32, 32), global_pooling_dim=1, vector_dim=512, num_classes=10)
+    config = VGGConfig(
+        version=11,
+        sample_size=(3, 32, 32),
+        global_pooling_dim=1,
+        vector_dim=512,
+        num_classes=10,
+    )
     model = VGG(config)
     summary(model, input_size=(1, *config.sample_size))
     print(model(torch.randn(1, *config.sample_size)).shape)

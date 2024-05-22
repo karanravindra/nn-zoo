@@ -5,6 +5,9 @@ from ._default import DefaultDataModuleConfig, DefaultDataModule
 from dataclasses import dataclass
 
 
+__all__ = ["CIFARDataModuleConfig", "CIFARDataModule"]
+
+
 @dataclass
 class CIFARDataModuleConfig(DefaultDataModuleConfig):
     use_cifar100: bool
@@ -15,12 +18,14 @@ class CIFARDataModule(DefaultDataModule):
         super().__init__(config)
         self.config = config
 
-        self.dataset = datasets.CIFAR100 if self.config.use_cifar100 else datasets.CIFAR10
+        self.dataset = (
+            datasets.CIFAR100 if self.config.use_cifar100 else datasets.CIFAR10
+        )
 
     @property
     def num_classes(self):
         return 100 if self.config.use_cifar100 else 10
-        
+
     def prepare_data(self):
         self.dataset(self.config.data_dir, train=True, download=True)
         self.dataset(self.config.data_dir, train=False, download=True)

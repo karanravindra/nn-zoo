@@ -5,6 +5,9 @@ import torch.nn.functional as F
 from torchinfo import summary
 from dataclasses import dataclass
 
+__all__ = ["ResNetConfig", "ResNet"]
+
+
 @dataclass
 class ResNetConfig:
     version: Literal[18, 34, 50, 101, 152] | None = 18
@@ -42,24 +45,32 @@ class ResNetConfig:
             self.blocks = (3, 8, 36, 3)
             self.block_channels = (64, 128, 256, 512)
 
+
 class BasicBlock(nn.Module):
     expansion = 1
 
     def __init__(self, in_planes, planes, stride=1):
         super(BasicBlock, self).__init__()
         self.conv1 = nn.Conv2d(
-            in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
+            in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False
+        )
         self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3,
-                               stride=1, padding=1, bias=False)
+        self.conv2 = nn.Conv2d(
+            planes, planes, kernel_size=3, stride=1, padding=1, bias=False
+        )
         self.bn2 = nn.BatchNorm2d(planes)
 
         self.shortcut = nn.Sequential()
-        if stride != 1 or in_planes != self.expansion*planes:
+        if stride != 1 or in_planes != self.expansion * planes:
             self.shortcut = nn.Sequential(
-                nn.Conv2d(in_planes, self.expansion*planes,
-                          kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(self.expansion*planes)
+                nn.Conv2d(
+                    in_planes,
+                    self.expansion * planes,
+                    kernel_size=1,
+                    stride=stride,
+                    bias=False,
+                ),
+                nn.BatchNorm2d(self.expansion * planes),
             )
 
     def forward(self, x):
@@ -69,6 +80,7 @@ class BasicBlock(nn.Module):
         out = F.relu(out)
         return out
 
+
 class Bottleneck(nn.Module):
     expansion = 4
 
@@ -76,19 +88,26 @@ class Bottleneck(nn.Module):
         super(Bottleneck, self).__init__()
         self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3,
-                               stride=stride, padding=1, bias=False)
+        self.conv2 = nn.Conv2d(
+            planes, planes, kernel_size=3, stride=stride, padding=1, bias=False
+        )
         self.bn2 = nn.BatchNorm2d(planes)
-        self.conv3 = nn.Conv2d(planes, self.expansion *
-                               planes, kernel_size=1, bias=False)
-        self.bn3 = nn.BatchNorm2d(self.expansion*planes)
+        self.conv3 = nn.Conv2d(
+            planes, self.expansion * planes, kernel_size=1, bias=False
+        )
+        self.bn3 = nn.BatchNorm2d(self.expansion * planes)
 
         self.shortcut = nn.Sequential()
-        if stride != 1 or in_planes != self.expansion*planes:
+        if stride != 1 or in_planes != self.expansion * planes:
             self.shortcut = nn.Sequential(
-                nn.Conv2d(in_planes, self.expansion*planes,
-                          kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(self.expansion*planes)
+                nn.Conv2d(
+                    in_planes,
+                    self.expansion * planes,
+                    kernel_size=1,
+                    stride=stride,
+                    bias=False,
+                ),
+                nn.BatchNorm2d(self.expansion * planes),
             )
 
     def forward(self, x):
@@ -99,6 +118,7 @@ class Bottleneck(nn.Module):
         out = F.relu(out)
         return out
 
+
 class ResNet(nn.Module):
     def __init__(self, config: ResNetConfig):
         super().__init__()
@@ -106,23 +126,41 @@ class ResNet(nn.Module):
 
         self.inplanes = config.inplanes
         self.conv1 = nn.Conv2d(
-            config.sample_size[0], self.inplanes, kernel_size=7, stride=2, padding=3, bias=False)
+            config.sample_size[0],
+            self.inplanes,
+            kernel_size=7,
+            stride=2,
+            padding=3,
+            bias=False,
+        )
         self.bn1 = nn.BatchNorm2d(self.inplanes)
         self.relu = nn.ReLU()
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
         self.layer1 = self._make_layer(
-            config.block, config.block_channels[0], config.blocks[0], stride=1)
+            config.block, config.block_channels[0], config.blocks[0], stride=1
+        )
         self.layer2 = self._make_layer(
-            config.block, config.block_channels[1], config.blocks[1], stride=2)
+            config.block, config.block_channels[1], config.blocks[1], stride=2
+        )
         self.layer3 = self._make_layer(
-            config.block, config.block_channels[2], config.blocks[2], stride=2)
+            config.block, config.block_channels[2], config.blocks[2], stride=2
+        )
         self.layer4 = self._make_layer(
-            config.block, config.block_channels[3], config.blocks[3], stride=2)
-        
+            config.block, config.block_channels[3], config.blocks[3], stride=2
+        )
+
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        
-        self.fc = nn.Linear(config.block_channels[3] * (BasicBlock.expansion if config.block == "basic" else Bottleneck.expansion), config.num_classes)
+
+        self.fc = nn.Linear(
+            config.block_channels[3]
+            * (
+                BasicBlock.expansion
+                if config.block == "basic"
+                else Bottleneck.expansion
+            ),
+            config.num_classes,
+        )
 
     def _make_layer(self, block, planes, blocks, stride=1):
         layers = []
@@ -137,7 +175,7 @@ class ResNet(nn.Module):
             stride = 1
 
         return nn.Sequential(*layers)
-    
+
     def forward(self, x):
         x = self.conv1(x)
         x = self.bn1(x)
@@ -154,7 +192,8 @@ class ResNet(nn.Module):
         x = self.fc(x)
 
         return x
-    
+
+
 if __name__ == "__main__":
     config = ResNetConfig()
     model = ResNet(config)

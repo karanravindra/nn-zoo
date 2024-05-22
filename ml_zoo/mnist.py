@@ -5,6 +5,9 @@ from ._default import DefaultDataModuleConfig, DefaultDataModule
 from dataclasses import dataclass
 
 
+__all__ = ["MNISTDataModuleConfig", "MNISTDataModule"]
+
+
 @dataclass
 class MNISTDataModuleConfig(DefaultDataModuleConfig):
     use_qmnist: bool
@@ -16,7 +19,7 @@ class MNISTDataModule(DefaultDataModule):
         self.config = config
 
         self.dataset = datasets.QMNIST if self.config.use_qmnist else datasets.MNIST
-            
+
     def __str__(self) -> str:
         return "mnist" if not self.config.use_qmnist else "qmnist"
 
