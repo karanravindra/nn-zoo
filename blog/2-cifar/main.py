@@ -16,8 +16,10 @@ from ml_zoo import (
     CIFARDataModuleConfig,
     Classifier,
     ClassifierConfig,
-    LeNet,
-    LeNetConfig,
+    VGG,
+    VGGConfig,
+    ResNet,
+    ResNetConfig,
 )
 
 
@@ -75,18 +77,64 @@ def main(model: nn.Module, run_name: str = "cifar"):
 
 if __name__ == "__main__":
     models = {
-        "vgg11": LeNet(
-            LeNetConfig(
-                version=None,
-                feature_dims=[3, 64, 128, 256, 512, 512],
-                kernel_sizes=[3, 3, 3, 3, 3, 3],
-                paddings=[1, 1, 1, 1, 1, 1],
-                pooling_sizes=[2, 2, 2, 2, 2, 2],
-                strides=[1, 1, 1, 1, 1, 1],
-                vectors=[512, 256, 10],
-                dropouts=[0.5, 0.5, 0],
-                activation=nn.ReLU(),
-                poolings=[nn.MaxPool2d, nn.MaxPool2d, nn.MaxPool2d, nn.MaxPool2d, nn.MaxPool2d],
+        "vgg11": VGG(
+            VGGConfig(
+                version=11,
+                num_classes=10,
+                sample_size=(3, 32, 32),
+                global_pooling_dim=1,
+            )
+        ),
+        "vgg13": VGG(
+            VGGConfig(
+                version=13,
+                num_classes=10,
+                sample_size=(3, 32, 32),
+                global_pooling_dim=1,
+            )
+        ),
+        "vgg16": VGG(
+            VGGConfig(
+                version=16,
+                num_classes=10,
+                sample_size=(3, 32, 32),
+                global_pooling_dim=1,
+            )
+        ),
+        "vgg19": VGG(
+            VGGConfig(
+                version=19,
+                num_classes=10,
+                sample_size=(3, 32, 32),
+                global_pooling_dim=1,
+            )
+        ),
+        "resnet18": ResNet(
+            ResNetConfig(
+                version=18,
+                num_classes=10,
+                sample_size=(3, 32, 32),
+            )
+        ),
+        "resnet34": ResNet(
+            ResNetConfig(
+                version=34,
+                num_classes=10,
+                sample_size=(3, 32, 32),
+            )
+        ),
+        "resnet50": ResNet(
+            ResNetConfig(
+                version=50,
+                num_classes=10,
+                sample_size=(3, 32, 32),
+            )
+        ),
+        "resnet101": ResNet(
+            ResNetConfig(
+                version=101,
+                num_classes=10,
+                sample_size=(3, 32, 32),
             )
         ),
     }
