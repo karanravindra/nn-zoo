@@ -1,6 +1,6 @@
-from torchvision.transforms import Compose
 from dataclasses import dataclass
 import lightning.pytorch as pl
+from torchvision.transforms import Compose, ToTensor
 
 __all__ = ["DefaultDataModuleConfig", "DefaultDataModule"]
 
@@ -8,11 +8,11 @@ __all__ = ["DefaultDataModuleConfig", "DefaultDataModule"]
 @dataclass
 class DefaultDataModuleConfig:
     data_dir: str
-    transforms: Compose
     batch_size: int
     num_workers: int
     persistent_workers: bool
-    pin_memory: bool
+    pin_memory: bool = False
+    transforms: Compose = Compose([ToTensor()])
 
 
 class DefaultDataModule(pl.LightningDataModule):
@@ -38,3 +38,11 @@ class DefaultDataModule(pl.LightningDataModule):
     @property
     def num_classes(self) -> int:
         raise NotImplementedError
+
+
+if __name__ == "__main__":
+    dm = DefaultDataModule(
+        DefaultDataModuleConfig(
+            data_dir=2, batch_size=32, num_workers=4, persistent_workers=True
+        )
+    )

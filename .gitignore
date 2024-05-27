@@ -6,6 +6,6 @@
 .idea
 
 .venv
-.data
+data
 /**/logs
 /**/__pycache__

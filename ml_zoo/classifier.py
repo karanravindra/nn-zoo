@@ -77,7 +77,7 @@ class Classifier(pl.LightningModule):
             },
         }
 
-        self.logger.experiment.config.update(config)
+        self.logger.experiment.config.update(config) # type: ignore
 
     def training_step(self, batch, batch_idx):
         x, y = batch
@@ -137,7 +137,7 @@ class Classifier(pl.LightningModule):
 
     def on_test_end(self):
         if self.config._log_test_table:
-            self.logger.experiment.log({"test/table": self.testing_table})
+            self.logger.experiment.log({"test/table": self.testing_table}) # type: ignore
 
     def configure_optimizers(self):
         optimizer = self.config._optim(self.parameters(), **self.config.optim_args)

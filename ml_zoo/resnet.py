@@ -1,200 +1,90 @@
-from typing import Literal, Tuple
+from typing import Literal, List
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchinfo import summary
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
-__all__ = ["ResNetConfig", "ResNet"]
-
+__all__ = ["LeNetConfig", "LeNet"]
 
 @dataclass
-class ResNetConfig:
-    version: Literal[18, 34, 50, 101, 152] | None = 18
-    sample_size: Tuple[int, int, int] = (3, 224, 224)
-    num_classes: int = 1000
-
-    block: Literal["basic", "bottleneck"] = "basic"
-    blocks: Tuple[int, int, int, int] = (2, 2, 2, 2)
-    block_channels: Tuple[int, int, int, int] = (64, 128, 256, 512)
-    inplanes: int = 64
-
-    dropouts: float = 0.0
-
-    pooling: Literal["max", "avg"] = "max"
-    activation: nn.Module = nn.ReLU()
+class LeNetConfig:
+    version: Literal[1, 4, 5] | None
+    input_channels: int | None = 1
+    num_classes: int = 10
+    feature_dims: List[int] = field(default_factory=lambda: [1, 4, 12])
+    kernel_sizes: List[int] = field(default_factory=lambda: [5, 5, 5])
+    strides: List[int] = field(default_factory=lambda: [1, 1, 1])
+    paddings: List[int] = field(default_factory=lambda: [0, 0, 0])
+    pooling_sizes: List[int] = field(default_factory=lambda: [2, 2, 2])
+    poolings: List[nn.Module] = field(
+        default_factory=lambda: [nn.AvgPool2d, nn.AvgPool2d, nn.AvgPool2d]
+    )
+    activation: nn.Module = nn.Tanh()
+    dropouts: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
+    vectors: List[int] = field(default_factory=lambda: [192, 10])
 
     def __post_init__(self):
-        if self.version == 18:
-            self.blocks = (2, 2, 2, 2)
-            self.block_channels = (64, 128, 256, 512)
+        # Adjust the architecture based on the version
+        if self.version == 1 and self.input_channels is not None:
+            self.feature_dims = [self.input_channels, 4, 12]
+            self.vectors = [192, self.num_classes]
 
-        if self.version == 34:
-            self.blocks = (3, 4, 6, 3)
-            self.block_channels = (64, 128, 256, 512)
+        if self.version == 4 and self.input_channels is not None:
+            self.feature_dims = [self.input_channels, 6, 12]
+            self.vectors = [12 * 5 * 5, 120, self.num_classes]
 
-        if self.version == 50:
-            self.blocks = (3, 4, 6, 3)
-            self.block_channels = (64, 128, 256, 512)
+        if self.version == 5 and self.input_channels is not None:
+            self.feature_dims = [self.input_channels, 6, 16]
+            self.vectors = [16 * 5 * 5, 120, 84, self.num_classes]
 
-        if self.version == 101:
-            self.blocks = (3, 4, 23, 3)
-            self.block_channels = (64, 128, 256, 512)
-
-        if self.version == 152:
-            self.blocks = (3, 8, 36, 3)
-            self.block_channels = (64, 128, 256, 512)
-
-
-class BasicBlock(nn.Module):
-    expansion = 1
-
-    def __init__(self, in_planes, planes, stride=1):
-        super(BasicBlock, self).__init__()
-        self.conv1 = nn.Conv2d(
-            in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False
-        )
-        self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(
-            planes, planes, kernel_size=3, stride=1, padding=1, bias=False
-        )
-        self.bn2 = nn.BatchNorm2d(planes)
-
-        self.shortcut = nn.Sequential()
-        if stride != 1 or in_planes != self.expansion * planes:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(
-                    in_planes,
-                    self.expansion * planes,
-                    kernel_size=1,
-                    stride=stride,
-                    bias=False,
-                ),
-                nn.BatchNorm2d(self.expansion * planes),
-            )
-
-    def forward(self, x):
-        out = F.relu(self.bn1(self.conv1(x)))
-        out = self.bn2(self.conv2(out))
-        out += self.shortcut(x)
-        out = F.relu(out)
-        return out
-
-
-class Bottleneck(nn.Module):
-    expansion = 4
-
-    def __init__(self, in_planes, planes, stride=1):
-        super(Bottleneck, self).__init__()
-        self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(
-            planes, planes, kernel_size=3, stride=stride, padding=1, bias=False
-        )
-        self.bn2 = nn.BatchNorm2d(planes)
-        self.conv3 = nn.Conv2d(
-            planes, self.expansion * planes, kernel_size=1, bias=False
-        )
-        self.bn3 = nn.BatchNorm2d(self.expansion * planes)
-
-        self.shortcut = nn.Sequential()
-        if stride != 1 or in_planes != self.expansion * planes:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(
-                    in_planes,
-                    self.expansion * planes,
-                    kernel_size=1,
-                    stride=stride,
-                    bias=False,
-                ),
-                nn.BatchNorm2d(self.expansion * planes),
-            )
-
-    def forward(self, x):
-        out = F.relu(self.bn1(self.conv1(x)))
-        out = F.relu(self.bn2(self.conv2(out)))
-        out = self.bn3(self.conv3(out))
-        out += self.shortcut(x)
-        out = F.relu(out)
-        return out
-
-
-class ResNet(nn.Module):
-    def __init__(self, config: ResNetConfig):
+class LeNet(nn.Module):
+    def __init__(self, config: LeNetConfig):
         super().__init__()
         self.config = config
 
-        self.inplanes = config.inplanes
-        self.conv1 = nn.Conv2d(
-            config.sample_size[0],
-            self.inplanes,
-            kernel_size=7,
-            stride=2,
-            padding=3,
-            bias=False,
-        )
-        self.bn1 = nn.BatchNorm2d(self.inplanes)
-        self.relu = nn.ReLU()
-        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.features = nn.ModuleList(self._make_feature_layers())
+        self.classifier = nn.ModuleList(self._make_classifier_layers())
 
-        self.layer1 = self._make_layer(
-            config.block, config.block_channels[0], config.blocks[0], stride=1
-        )
-        self.layer2 = self._make_layer(
-            config.block, config.block_channels[1], config.blocks[1], stride=2
-        )
-        self.layer3 = self._make_layer(
-            config.block, config.block_channels[2], config.blocks[2], stride=2
-        )
-        self.layer4 = self._make_layer(
-            config.block, config.block_channels[3], config.blocks[3], stride=2
-        )
-
-        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-
-        self.fc = nn.Linear(
-            config.block_channels[3]
-            * (
-                BasicBlock.expansion
-                if config.block == "basic"
-                else Bottleneck.expansion
-            ),
-            config.num_classes,
-        )
-
-    def _make_layer(self, block, planes, blocks, stride=1):
+    def _make_feature_layers(self):
         layers = []
-        if block == "basic":
-            block = BasicBlock
-        else:
-            block = Bottleneck
+        for i, (in_channels, out_channels) in enumerate(
+            zip(self.config.feature_dims[:-1], self.config.feature_dims[1:])
+        ):
+            layers.append(
+                nn.Conv2d(
+                    in_channels,
+                    out_channels,
+                    self.config.kernel_sizes[i],
+                    self.config.strides[i],
+                    self.config.paddings[i],
+                )
+            )
+            layers.append(self.config.activation)
+            layers.append(self.config.poolings[i](self.config.pooling_sizes[i]))
+        return layers
 
-        for _ in range(blocks):
-            layers.append(block(self.inplanes, planes, stride))
-            self.inplanes = planes * block.expansion
-            stride = 1
+    def _make_classifier_layers(self):
+        layers:list[nn.Module] = [nn.Flatten()]
+        for in_features, out_features, dropout in zip(
+            self.config.vectors[:-1], self.config.vectors[1:], self.config.dropouts
+        ):
+            if dropout > 0:
+                layers.append(nn.Dropout(dropout))
 
-        return nn.Sequential(*layers)
+            layers.append(nn.Linear(in_features, out_features))
+            layers.append(self.config.activation)
+        return layers[:-1]
 
     def forward(self, x):
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.relu(x)
-        x = self.maxpool(x)
-
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.layer4(x)
-
-        x = self.avgpool(x)
-        x = torch.flatten(x, 1)
-        x = self.fc(x)
-
+        for layer in self.features:
+            x = layer(x)
+        for layer in self.classifier:
+            x = layer(x)
         return x
 
-
 if __name__ == "__main__":
-    config = ResNetConfig()
-    model = ResNet(config)
-    summary(model, input_size=(1, 3, 32, 32))
+    config = LeNetConfig(version=5, input_channels=3)
+    model = LeNet(config)
+    print(model)
+    summary(model, input_size=(64, 3, 32, 32))

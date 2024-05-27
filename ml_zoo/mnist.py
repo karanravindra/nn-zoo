@@ -10,7 +10,7 @@ __all__ = ["MNISTDataModuleConfig", "MNISTDataModule"]
 
 @dataclass
 class MNISTDataModuleConfig(DefaultDataModuleConfig):
-    use_qmnist: bool
+    use_qmnist: bool = False
 
 
 class MNISTDataModule(DefaultDataModule):

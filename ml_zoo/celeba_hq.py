@@ -1,6 +1,6 @@
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
-import lightning.pytorch as pl
+from termcolor import colored
 from ._default import DefaultDataModuleConfig, DefaultDataModule
 from dataclasses import dataclass
 
@@ -24,7 +24,9 @@ class CelebAHQDataModule(DefaultDataModule):
         return 2
 
     def prepare_data(self):
-        pass
+        print(colored("Preparing CelebA-HQ data...", "blue"))
+        print(colored("Dataset download not supported yet.", "red"))
+        print(colored("Please download the dataset manually.", "red"))
 
     def setup(self, stage=None):
         if stage == "fit" or stage is None:

@@ -10,7 +10,7 @@ __all__ = ["CIFARDataModuleConfig", "CIFARDataModule"]
 
 @dataclass
 class CIFARDataModuleConfig(DefaultDataModuleConfig):
-    use_cifar100: bool
+    use_cifar100: bool = False
 
 
 class CIFARDataModule(DefaultDataModule):
