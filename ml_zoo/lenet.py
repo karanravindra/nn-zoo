@@ -1,5 +1,5 @@
 from typing import Literal, List
-import torch
+from _default import DefaultModel
 import torch.nn as nn
 from torchinfo import summary
 from dataclasses import dataclass, field
@@ -9,38 +9,38 @@ __all__ = ["LeNetConfig", "LeNet"]
 
 @dataclass
 class LeNetConfig:
+    
+    sample_size: tuple[int, int, int]
     version: Literal[1, 4, 5] | None
-    input_channels: int | None = 1
     num_classes: int = 10
 
-    feature_dims: List[int] = field(default_factory=lambda: [1, 4, 12])
-    kernel_sizes: List[int] = field(default_factory=lambda: [5, 5, 5])
-    strides: List[int] = field(default_factory=lambda: [1, 1, 1])
-    paddings: List[int] = field(default_factory=lambda: [0, 0, 0])
-    pooling_sizes: List[int] = field(default_factory=lambda: [2, 2, 2])
-    poolings: List[nn.Module] = field(
-        default_factory=lambda: [nn.AvgPool2d, nn.AvgPool2d, nn.AvgPool2d]
-    )
-    activation: nn.Module = nn.Tanh()
-    dropouts: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
+    feature_dims: List[int] = field(default_factory=lambda: [4, 12])
+    kernel_sizes: List[int] = field(default_factory=lambda: [5, 5])
+    poolings: Literal["MaxPool2d", "AvgPool2d"] = "MaxPool2d"
+    activation: Literal["Tanh", "ReLU"] = "Tanh"
 
     vectors: List[int] = field(default_factory=lambda: [192, 10])
+    dropouts: List[float] = field(default_factory=lambda: [0.0, 0.0])
 
     def __post_init__(self):
-        if self.version == 1 and self.input_channels is not None:
-            self.feature_dims = [self.input_channels, 4, 12]
+
+        if self.version == 1 and self.sample_size[0] is not None:
+            self.feature_dims = [self.sample_size[0], 4, 12]
             self.vectors = [192, self.num_classes]
 
-        if self.version == 4 and self.input_channels is not None:
-            self.feature_dims = [self.input_channels, 6, 12]
+        if self.version == 4 and self.sample_size[0] is not None:
+            self.feature_dims = [self.sample_size[0], 6, 12]
             self.vectors = [12 * 5 * 5, 120, self.num_classes]
 
-        if self.version == 5 and self.input_channels is not None:
-            self.feature_dims = [self.input_channels, 6, 16]
+        if self.version == 5 and self.sample_size[0] is not None:
+            self.feature_dims = [self.sample_size[0], 6, 16]
             self.vectors = [16 * 5 * 5, 120, 84, self.num_classes]
 
+        self.poolings = getattr(nn, self.poolings)
+        self.activation = getattr(nn, self.activation)()
 
-class LeNet(torch.nn.Module):
+
+class LeNet(DefaultModel):
     def __init__(self, config: LeNetConfig):
         super().__init__()
         self.config = config
@@ -62,12 +62,10 @@ class LeNet(torch.nn.Module):
                     in_channels,
                     out_channels,
                     self.config.kernel_sizes[i],
-                    self.config.strides[i],
-                    self.config.paddings[i],
                 )
             )
             feature_layers.append(self.config.activation)
-            feature_layers.append(self.config.poolings[i](self.config.pooling_sizes[i]))
+            feature_layers.append(self.config.poolings(2))  # type: ignore
         return nn.ModuleList(feature_layers)
 
     def make_classifier_layers(self):
@@ -86,18 +84,20 @@ class LeNet(torch.nn.Module):
     def forward(self, x):
         return self.layers(x)
 
+    def summary(self):
+        return summary(self, input_size=(1, *self.config.sample_size))
+
 
 if __name__ == "__main__":
     config = LeNetConfig(
-        version=None,
-        feature_dims=[3, 32, 64, 128],
+        sample_size=(1, 28, 28),
+        version=4,
+        feature_dims=[6, 16],
         kernel_sizes=[3, 3, 3, 3],
-        paddings=[1, 1, 1, 1],
         vectors=[128 * 4 * 4, 240, 168, 10],
         dropouts=[0.5, 0.0, 0.0, 0.0, 0.0],
-        activation=nn.ReLU(),
-        poolings=[nn.MaxPool2d, nn.MaxPool2d, nn.MaxPool2d, nn.MaxPool2d],
+        activation="ReLU",
+        poolings="MaxPool2d",
     )
     model = LeNet(config)
-    print(model)
-    summary(model, input_size=(64, 3, 32, 32))
+    model.summary()

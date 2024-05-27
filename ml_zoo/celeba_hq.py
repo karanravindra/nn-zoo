@@ -68,7 +68,7 @@ class CelebAHQDataModule(DefaultDataModule):
 
 
 if __name__ == "__main__":
-    config = CelebAHQDataModuleConfig(
+    dmc = CelebAHQDataModuleConfig(
         data_dir="data",
         transforms=transforms.Compose([transforms.ToTensor()]),
         batch_size=32,
@@ -76,7 +76,7 @@ if __name__ == "__main__":
         persistent_workers=True,
         pin_memory=True,
     )
-    datamodule = CelebAHQDataModule(config)
+    datamodule = CelebAHQDataModule(dmc)
     datamodule.prepare_data()
     datamodule.setup()
     train_loader = datamodule.train_dataloader()
