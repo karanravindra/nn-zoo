@@ -1,5 +1,5 @@
 from typing import Literal, List
-from _default import DefaultModel
+from ._default import DefaultModel
 import torch.nn as nn
 from torchinfo import summary
 from dataclasses import dataclass, field

@@ -1,8 +1,8 @@
+from dataclasses import dataclass
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 import lightning.pytorch as pl
 from ._default import DefaultDataModuleConfig, DefaultDataModule
-from dataclasses import dataclass
 
 
 __all__ = ["CIFARDataModuleConfig", "CIFARDataModule"]
@@ -22,8 +22,16 @@ class CIFARDataModule(DefaultDataModule):
             datasets.CIFAR100 if self.config.use_cifar100 else datasets.CIFAR10
         )
 
-    @property
-    def num_classes(self):
+        self.train_dataset: Dataset | None = None
+        self.val_dataset: Dataset | None = None
+        self.test_dataset: Dataset | None = None
+
+    def get_num_classes(self):
+        """Get the number of classes in the dataset.
+
+        Returns:
+            int: The number of classes in the dataset.
+        """
         return 100 if self.config.use_cifar100 else 10
 
     def prepare_data(self):
@@ -40,6 +48,7 @@ class CIFARDataModule(DefaultDataModule):
             )
 
     def train_dataloader(self):
+        assert self.train_dataset is not None
         return DataLoader(
             self.train_dataset,
             batch_size=self.config.batch_size,
@@ -49,6 +58,7 @@ class CIFARDataModule(DefaultDataModule):
         )
 
     def val_dataloader(self):
+        assert self.val_dataset is not None
         return DataLoader(
             self.val_dataset,
             batch_size=self.config.batch_size,
@@ -58,6 +68,7 @@ class CIFARDataModule(DefaultDataModule):
         )
 
     def test_dataloader(self):
+        assert self.val_dataset is not None
         return DataLoader(
             self.val_dataset,
             batch_size=self.config.batch_size,
@@ -68,7 +79,7 @@ class CIFARDataModule(DefaultDataModule):
 
 
 if __name__ == "__main__":
-    config = CIFARDataModuleConfig(
+    dmc = CIFARDataModuleConfig(
         data_dir="data",
         transforms=transforms.Compose([transforms.ToTensor()]),
         batch_size=32,
@@ -77,7 +88,7 @@ if __name__ == "__main__":
         pin_memory=True,
         use_cifar100=False,
     )
-    datamodule = CIFARDataModule(config)
+    datamodule = CIFARDataModule(dmc)
     datamodule.prepare_data()
     datamodule.setup()
     train_loader = datamodule.train_dataloader()

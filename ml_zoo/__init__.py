@@ -4,7 +4,8 @@ from .cifar import CIFARDataModule, CIFARDataModuleConfig
 from .classifier import Classifier, ClassifierConfig
 from .lenet import LeNet, LeNetConfig
 from .mnist import MNISTDataModule, MNISTDataModuleConfig
-from .resnet import ResNet, ResNetConfig
+from .tinyimagenet import TinyImageNetDataModule, TinyImageNetDataModuleConfig
+from .resnet import ResNet, ResNetConfig, BasicBlock, Bottleneck
 from .vgg import VGG, VGGConfig
 
 __package__ = "ml_zoo"

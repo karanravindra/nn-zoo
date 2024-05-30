@@ -1,8 +1,7 @@
-from torchvision import datasets, transforms
-from torch.utils.data import DataLoader
-from termcolor import colored
-from ._default import DefaultDataModuleConfig, DefaultDataModule
 from dataclasses import dataclass
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader, Dataset
+from ._default import DefaultDataModuleConfig, DefaultDataModule
 
 __all__ = ["CelebAHQDataModuleConfig", "CelebAHQDataModule"]
 
@@ -19,14 +18,20 @@ class CelebAHQDataModule(DefaultDataModule):
 
         self.dataset = datasets.ImageFolder
 
-    @property
-    def num_classes(self):
+        self.train_dataset: Dataset | None = None
+        self.val_dataset: Dataset | None = None
+        self.test_dataset: Dataset | None = None
+
+    def get_num_classes(self):
+        """Get the number of classes in the dataset.
+
+        Returns:
+            int: The number of classes in the dataset.
+        """
         return 2
 
     def prepare_data(self):
-        print(colored("Preparing CelebA-HQ data...", "blue"))
-        print(colored("Dataset download not supported yet.", "red"))
-        print(colored("Please download the dataset manually.", "red"))
+        raise NotImplementedError
 
     def setup(self, stage=None):
         if stage == "fit" or stage is None:
@@ -40,6 +45,7 @@ class CelebAHQDataModule(DefaultDataModule):
             )
 
     def train_dataloader(self):
+        assert self.train_dataset is not None
         return DataLoader(
             self.train_dataset,
             batch_size=self.config.batch_size,
@@ -49,6 +55,7 @@ class CelebAHQDataModule(DefaultDataModule):
         )
 
     def val_dataloader(self):
+        assert self.val_dataset is not None
         return DataLoader(
             self.val_dataset,
             batch_size=self.config.batch_size,
@@ -58,6 +65,7 @@ class CelebAHQDataModule(DefaultDataModule):
         )
 
     def test_dataloader(self):
+        assert self.val_dataset is not None
         return DataLoader(
             self.val_dataset,
             batch_size=self.config.batch_size,
@@ -70,11 +78,11 @@ class CelebAHQDataModule(DefaultDataModule):
 if __name__ == "__main__":
     dmc = CelebAHQDataModuleConfig(
         data_dir="data",
-        transforms=transforms.Compose([transforms.ToTensor()]),
         batch_size=32,
         num_workers=4,
         persistent_workers=True,
         pin_memory=True,
+        transforms=transforms.Compose([transforms.ToTensor()]),
     )
     datamodule = CelebAHQDataModule(dmc)
     datamodule.prepare_data()

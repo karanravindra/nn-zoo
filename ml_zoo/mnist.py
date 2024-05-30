@@ -69,7 +69,7 @@ class MNISTDataModule(DefaultDataModule):
 
 
 if __name__ == "__main__":
-    config = MNISTDataModuleConfig(
+    dmc = MNISTDataModuleConfig(
         data_dir="data",
         transforms=transforms.Compose([transforms.ToTensor()]),
         batch_size=32,
@@ -78,7 +78,7 @@ if __name__ == "__main__":
         pin_memory=True,
         use_qmnist=False,
     )
-    datamodule = MNISTDataModule(config)
+    datamodule = MNISTDataModule(dmc)
     datamodule.prepare_data()
     datamodule.setup()
     train_loader = datamodule.train_dataloader()

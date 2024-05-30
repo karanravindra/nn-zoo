@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+""""""
+from dataclasses import dataclass, field
 import pretty_errors
 from torch import nn, Tensor
 from lightning.pytorch import LightningDataModule
@@ -32,7 +33,10 @@ class DefaultDataModuleConfig:
     num_workers: int
     persistent_workers: bool
     pin_memory: bool = False
-    transforms: Compose = Compose([ToTensor()])
+    transforms: list | Compose = field(default_factory=lambda: [ToTensor()])
+
+    def __post_init__(self):
+        self.transforms = Compose(self.transforms)
 
 
 class DefaultDataModule(LightningDataModule):
@@ -109,4 +113,4 @@ class DefaultModel(nn.Module):
 if __name__ == "__main__":
     dmc = DefaultModelConfig()
     model = DefaultModel()
-    print(model(1))
+    print(model)

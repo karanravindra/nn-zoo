@@ -318,24 +318,24 @@ class VQVAE(nn.Module):
 class VQVAE_Trainer(pl.LightningModule):
     def __init__(
         self,
-        sample_size=256,
-        in_channels=3,
-        out_channels=3,
-        num_hiddens=64,
+        sample_size=32,
+        in_channels=1,
+        out_channels=1,
+        num_hiddens=32,
         num_downsampling_layers=2,
-        num_residual_layers=4,
-        num_residual_hiddens=128,
-        embedding_dim=32,  # 32, 64, 128, 256
-        num_embeddings=2048,  # 256, 512, 1024, 2048
+        num_residual_layers=1,
+        num_residual_hiddens=64,
+        embedding_dim=4,  # 32, 64, 128, 256
+        num_embeddings=16,  # 256, 512, 1024, 2048
         use_ema=True,
         decay=0.99,
         epsilon=1e-5,
         beta=0.25,
-        lr=4e-4,
+        lr=2e-4,
         weight_decay=0.01,
         fid_features=2048,
-        batch_size=64,
-        dataset="celeba_hq",
+        batch_size=128,
+        dataset="mnist",
     ):
         super(VQVAE_Trainer, self).__init__()
         self.model = VQVAE(
@@ -370,9 +370,9 @@ class VQVAE_Trainer(pl.LightningModule):
             loss += out["dictionary_loss"]
             self.log("train_dictionary_loss", out["dictionary_loss"])
 
-        self.log("train_loss", loss)
-        self.log("train_recon_error", recon_error)
-        self.log("train_commitment_loss", out["commitment_loss"])
+        self.log("train/loss", loss)
+        self.log("train/recon_error", recon_error)
+        self.log("train/commitment_loss", out["commitment_loss"])
 
         return loss
 
@@ -389,9 +389,9 @@ class VQVAE_Trainer(pl.LightningModule):
             loss += out["dictionary_loss"]
             self.log("val_dictionary_loss", out["dictionary_loss"])
 
-        self.log("val_loss", loss)
-        self.log("val_recon_error", recon_error)
-        self.log("val_commitment_loss", out["commitment_loss"])
+        self.log("val/loss", loss)
+        self.log("val/recon_error", recon_error)
+        self.log("val/commitment_loss", out["commitment_loss"])
 
         if batch_idx == 0:
             if self.global_step == 0 and batch_idx == 0:
@@ -611,7 +611,7 @@ def main():
         logger=wandb_logger,
         check_val_every_n_epoch=1,
         default_root_dir="./vqvae/logs",
-        max_epochs=50,
+        max_epochs=250
     )
     trainer.fit(vae)
 
