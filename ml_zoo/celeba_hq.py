@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, Dataset
-from _default import DefaultDataModuleConfig, DefaultDataModule
+from ._default import DefaultDataModuleConfig, DefaultDataModule
 from pathlib import Path
 from zipfile import ZipFile
 
