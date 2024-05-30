@@ -1,7 +1,11 @@
 from dataclasses import dataclass
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, Dataset
-from ._default import DefaultDataModuleConfig, DefaultDataModule
+from _default import DefaultDataModuleConfig, DefaultDataModule
+from pathlib import Path
+from zipfile import ZipFile
+
+import os
 
 __all__ = ["CelebAHQDataModuleConfig", "CelebAHQDataModule"]
 
@@ -31,7 +35,32 @@ class CelebAHQDataModule(DefaultDataModule):
         return 2
 
     def prepare_data(self):
-        raise NotImplementedError
+        if not Path(self.config.data_dir + "/celeba_hq").exists():
+            # URL=https://www.dropbox.com/s/f7pvjij2xlpff59/celeba_hq.zip?dl=0
+            # ZIP_FILE=./data/celeba_hq.zip
+            # mkdir -p ./data
+            # wget -N $URL -O $ZIP_FILE
+            # unzip $ZIP_FILE -d ./data
+            # rm $ZIP_FILE
+
+            URL = "https://www.dropbox.com/s/f7pvjij2xlpff59/celeba_hq.zip?dl=0"
+            ZIP_FILE = self.config.data_dir + "/celeba_hq.zip"
+            DATASET_ZIP = Path(ZIP_FILE)
+
+            # Download Dataset if needed
+            if not DATASET_ZIP.exists():
+                print("Downloading the dataset, this may take a while...")
+                os.system(f"wget -N {URL} -O {ZIP_FILE}")
+
+            # Extract Dataset
+            if not Path(self.config.data_dir + "/celeba_hq").exists():
+                print("Extracting the dataset, this may take a while...")
+                with ZipFile(ZIP_FILE, "r") as zip_ref:
+                    zip_ref.extractall(self.config.data_dir)
+
+            # Remove the ZIP file
+            if DATASET_ZIP.exists():
+                os.remove(ZIP_FILE)
 
     def setup(self, stage=None):
         if stage == "fit" or stage is None:
