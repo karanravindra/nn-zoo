@@ -23,9 +23,9 @@ class MNISTDataModule(DefaultDataModule):
     def __str__(self) -> str:
         return "mnist" if not self.config.use_qmnist else "qmnist"
 
-    @property
-    def num_classes(self) -> int:
-        return len(self.dataset.classes)
+    
+    def get_num_classes(self) -> int:
+        return 10
 
     def prepare_data(self):
         self.dataset(self.config.data_dir, train=True, download=True)
@@ -46,6 +46,7 @@ class MNISTDataModule(DefaultDataModule):
             batch_size=self.config.batch_size,
             num_workers=self.config.num_workers,
             pin_memory=self.config.pin_memory,
+            shuffle=True,
             persistent_workers=self.config.persistent_workers,
         )
 

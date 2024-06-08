@@ -71,14 +71,17 @@ class LeNet(DefaultModel):
     def make_classifier_layers(self):
         classifier_layers = []
         classifier_layers.append(nn.Flatten())
+
         for in_features, out_features, dropout in zip(
             self.config.vectors[:-1], self.config.vectors[1:], self.config.dropouts
         ):
+            print(in_features, out_features, dropout)
             if dropout > 0:
                 classifier_layers.append(nn.Dropout(dropout))
 
             classifier_layers.append(nn.Linear(in_features, out_features))
             classifier_layers.append(self.config.activation)
+
         return nn.ModuleList(classifier_layers[:-1])
 
     def forward(self, x):

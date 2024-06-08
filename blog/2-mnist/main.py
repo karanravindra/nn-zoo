@@ -5,7 +5,7 @@ import torch.nn as nn
 import torchvision.transforms as transforms
 
 from torchinfo import summary
-
+import torch
 import sys
 import os
 
@@ -29,9 +29,7 @@ def main(model: nn.Module, run_name: str = "qmnist"):
         num_workers=4,
         pin_memory=True,
         persistent_workers=True,
-        transforms=transforms.Compose(
-            [transforms.ToTensor(), transforms.Resize((32, 32))]
-        ),
+        transforms=[transforms.ToTensor(), transforms.Resize((32, 32))],
         use_qmnist=True,
     )
 
@@ -95,11 +93,16 @@ if __name__ == "__main__":
         #     nn.Tanh(),
         #     nn.Linear(128, 10),
         # ),
-        # "lenet 1": LeNet(LeNetConfig(version=1)),
-        # "lenet 4": LeNet(LeNetConfig(version=4)),
-        # "lenet 5": LeNet(LeNetConfig(version=5)),
-        "lenet 5 reg": LeNet(LeNetConfig(version=5, dropouts=[0.1, 0, 0])),
+        # "lenet 1": LeNet(LeNetConfig(sample_size=(1, 28, 28), version=1)),
+        "lenet 4": LeNet(LeNetConfig(sample_size=(1, 32, 32), version=4)),
+        "lenet 5": LeNet(LeNetConfig(sample_size=(1, 32, 32), version=5)),
+        # "lenet 5 relu": LeNet(LeNetConfig(sample_size=(1, 32, 32), version=5, activation="ReLU")),
+        # "lenet 5 relu max-pool": LeNet(LeNetConfig(sample_size=(1, 32, 32), version=5, activation="ReLU", poolings="MaxPool2d")),
     }
 
     for name, model in models.items():
+        print(f"Training {name}")
+        print(f"Output: {model(torch.randn(1, 1, 32, 32)).shape}")
+        print(model.config.vectors)
+        continue
         main(model, name)
