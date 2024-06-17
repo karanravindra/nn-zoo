@@ -86,12 +86,11 @@ class Classifier(pl.LightningModule):
 
         self.logger.experiment.config.update(config) # type: ignore
 
-    def on_epoch_start(self):
-        scheduler = self.trainer.lr_schedulers[0]["scheduler"]
-        if scheduler is not None:
-            # Log learning rate
-            self.log("lr", scheduler.get_last_lr()[0])
-
+    def on_train_epoch_start(self) -> None:
+        scheduler = self.lr_schedulers()
+        if scheduler:
+            lr = scheduler.get_last_lr()[0]
+            self.log("lr", lr)
             
 
     def training_step(self, batch, batch_idx):

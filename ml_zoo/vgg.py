@@ -98,16 +98,15 @@ class VGG(nn.Module):
         classifier_layers = []
         classifier_layers.append(nn.Flatten())
         in_features = self.config.vectors[0]
-        for out_features in self.config.vectors[1:]:
+        for in_features, out_features, dropout in zip(
+            self.config.vectors, self.config.vectors[1:], self.config.dropouts
+        ):
             classifier_layers.append(nn.Linear(in_features, out_features))
             classifier_layers.append(self.config.activation)
-            classifier_layers.append(nn.Dropout(self.config.dropouts[0]))
-            in_features = out_features
+            if dropout > 0:
+                classifier_layers.append(nn.Dropout(dropout))
 
-        classifier_layers = classifier_layers[:-2]
-        classifier_layers.append(nn.Dropout(self.config.dropouts[1]))
         classifier_layers.append(nn.Linear(in_features, self.config.num_classes))
-
         return classifier_layers
 
     def forward(self, x):

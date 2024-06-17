@@ -29,7 +29,10 @@ def main(model: nn.Module, run_name: str = "qmnist"):
         num_workers=4,
         pin_memory=True,
         persistent_workers=True,
-        transforms=[transforms.ToTensor(), transforms.Resize((32, 32))],
+        transforms=[
+            transforms.ToTensor(),
+            transforms.Resize((32, 32)),
+        ],
         use_qmnist=True,
     )
 
@@ -58,7 +61,7 @@ def main(model: nn.Module, run_name: str = "qmnist"):
     trainer = pl.Trainer(
         logger=logger,
         default_root_dir="blog/2-mist/logs",
-        max_epochs=50,
+        max_epochs=100,
         check_val_every_n_epoch=1,
         enable_model_summary=False,
     )
@@ -94,15 +97,14 @@ if __name__ == "__main__":
         #     nn.Linear(128, 10),
         # ),
         # "lenet 1": LeNet(LeNetConfig(sample_size=(1, 28, 28), version=1)),
-        "lenet 4": LeNet(LeNetConfig(sample_size=(1, 32, 32), version=4)),
-        "lenet 5": LeNet(LeNetConfig(sample_size=(1, 32, 32), version=5)),
+        # "lenet 4": LeNet(LeNetConfig(sample_size=(1, 32, 32), version=4)),
+        # "lenet 5": LeNet(LeNetConfig(sample_size=(1, 32, 32), version=5)),
         # "lenet 5 relu": LeNet(LeNetConfig(sample_size=(1, 32, 32), version=5, activation="ReLU")),
         # "lenet 5 relu max-pool": LeNet(LeNetConfig(sample_size=(1, 32, 32), version=5, activation="ReLU", poolings="MaxPool2d")),
+        # "lenet 5 relu max-pool drop1": LeNet(LeNetConfig(sample_size=(1, 32, 32), version=5, activation="ReLU", poolings="MaxPool2d", dropouts=[0.5, 0, 0])),
+        # "lenet 5 relu max-pool drop2": LeNet(LeNetConfig(sample_size=(1, 32, 32), version=5, activation="ReLU", poolings="MaxPool2d", dropouts=[0.5, 0.5, 0])),
+        # "lenet 5 relu max-pool drop3": LeNet(LeNetConfig(sample_size=(1, 32, 32), version=5, activation="ReLU", poolings="MaxPool2d", dropouts=[0.5, 0.5, 0.5])),
     }
 
     for name, model in models.items():
-        print(f"Training {name}")
-        print(f"Output: {model(torch.randn(1, 1, 32, 32)).shape}")
-        print(model.config.vectors)
-        continue
         main(model, name)

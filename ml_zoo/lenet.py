@@ -36,6 +36,9 @@ class LeNetConfig:
             self.feature_dims = [self.sample_size[0], 6, 16]
             self.vectors = [16 * 5 * 5, 120, 84, self.num_classes]
 
+            if len(self.dropouts) < len(self.vectors):
+                self.dropouts.extend([0.0] * (len(self.vectors) - len(self.dropouts)))
+
         self.poolings = getattr(nn, self.poolings)
         self.activation = getattr(nn, self.activation)()
 
@@ -75,7 +78,6 @@ class LeNet(DefaultModel):
         for in_features, out_features, dropout in zip(
             self.config.vectors[:-1], self.config.vectors[1:], self.config.dropouts
         ):
-            print(in_features, out_features, dropout)
             if dropout > 0:
                 classifier_layers.append(nn.Dropout(dropout))
 

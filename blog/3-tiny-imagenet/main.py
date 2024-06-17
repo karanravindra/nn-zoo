@@ -32,6 +32,7 @@ def main(model: nn.Module, run_name: str = "tiny-imagenet"):
     )
 
     dm = TinyImageNetDataModule(config)
+    dm.prepare_data()
 
     classifierConfig = ClassifierConfig(
         model=model,
