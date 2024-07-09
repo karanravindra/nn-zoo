@@ -46,7 +46,8 @@ setup(
     extras_require={
         "dev": [
             "pytest",
-            "ruff"
+            "ruff",
+            "pre-commit",
         ],
     },
     python_requires=">=3.8",
