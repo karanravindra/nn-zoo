@@ -37,15 +37,11 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    requires=[
-        "torch",
-        "torchvision",
-        # "pytorch-lightning",
-        # "wandb",
-    ],
     install_requires=[
         "setuptools",
         "wheel",
+        "torch",
+        "torchvision",
     ],
     extras_require={
         "dev": [
@@ -53,5 +49,5 @@ setup(
             "ruff"
         ],
     },
-    python_requires=">=3",
+    python_requires=">=3.8",
 )
