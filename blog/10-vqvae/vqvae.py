@@ -326,11 +326,11 @@ class VQVAE(nn.Module):
 class VQVAE_Trainer(pl.LightningModule):
     def __init__(
         self,
-        sample_size=128,
-        in_channels=3,
-        out_channels=3,
+        sample_size=64,
+        in_channels=1,
+        out_channels=1,
         num_hiddens=64,
-        num_downsampling_layers=2,
+        num_downsampling_layers=4,
         num_residual_layers=1,
         num_residual_hiddens=128,
         embedding_dim=32,  # 32, 64, 128, 256
@@ -343,7 +343,7 @@ class VQVAE_Trainer(pl.LightningModule):
         weight_decay=0.01,
         fid_features=2048,
         batch_size=64,
-        dataset="celeba_hq",
+        dataset="mnist",
     ):
         super(VQVAE_Trainer, self).__init__()
         self.model = VQVAE(
