@@ -50,6 +50,7 @@ setup(
     extras_require={
         "dev": [
             "pytest",
+            "ruff"
         ],
     },
     python_requires=">=3.8",
