@@ -26,7 +26,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: ml_zoo
       run: |
-        pip install .
+        pip install -e '.[dev]'
     - name: Test with pytest
       run: |
         pytest
