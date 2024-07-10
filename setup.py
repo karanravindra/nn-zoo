@@ -31,7 +31,7 @@ setup(
     long_description_content_type="text/markdown",
     license="MIT",
     url="https://github.com/karanravindra/ml-zoo",
-    packages=find_packages(),
+    packages=find_packages(exclude=["tests"]),
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
@@ -44,6 +44,7 @@ setup(
         "torchvision",
         "lightning",
         "einops",
+        "wandb",
     ],
     extras_require={
         "dev": [

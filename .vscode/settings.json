@@ -24,6 +24,8 @@
   "terminal.integrated.enableMultiLinePasteWarning": "never",
   "terminal.integrated.showTerminalConfigPrompt": false,
   "files.exclude": {
+    ".pytest_cache": true,
+    ".ruff_cache": true,
     ".venv": true,
     "**/.DS_Store": false,
     "**/.git": false,
