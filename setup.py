@@ -42,6 +42,8 @@ setup(
         "wheel",
         "torch",
         "torchvision",
+        "lightning",
+        "einops",
     ],
     extras_require={
         "dev": [
