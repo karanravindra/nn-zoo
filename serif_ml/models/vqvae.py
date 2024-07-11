@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
-from ml_zoo.models.components import VectorQuantizer
-from ml_zoo.models.components import ResidualStack
+from serif_ml.models.components import VectorQuantizer
+from serif_ml.models.components import ResidualStack
 
 __all__ = ["VQVAE"]
 
@@ -52,7 +52,10 @@ class Encoder(nn.Module):
         )
         self.conv = conv
         self.residual_stack = ResidualStack(
-            num_hiddens, num_residual_layers, num_residual_hiddens
+            n_blocks=num_residual_layers,
+            in_channels=num_hiddens,
+            out_channels=num_hiddens,
+            kernel_size=3,
         )
 
     def forward(self, x):
@@ -79,7 +82,10 @@ class Decoder(nn.Module):
             padding=1,
         )
         self.residual_stack = ResidualStack(
-            num_hiddens, num_residual_layers, num_residual_hiddens
+            n_blocks=num_residual_layers,
+            in_channels=num_hiddens,
+            out_channels=num_hiddens,
+            kernel_size=3,
         )
         upconv = nn.Sequential()
         for upsampling_layer in range(num_upsampling_layers):

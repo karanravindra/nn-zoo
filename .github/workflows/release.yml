@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/ml-zoo
+      url: https://pypi.org/p/serif-ml
     permissions:
       id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
