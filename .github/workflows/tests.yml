@@ -23,7 +23,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install ml-zoo
       run: |
-        pip install .
+        pip install '.[dev]'
     - name: Run Tests
       run: |
         pytest
