@@ -52,7 +52,10 @@ class Encoder(nn.Module):
         )
         self.conv = conv
         self.residual_stack = ResidualStack(
-            num_hiddens, num_residual_layers, num_residual_hiddens
+            n_blocks=num_residual_layers,
+            in_channels=num_hiddens,
+            out_channels=num_hiddens,
+            kernel_size=3,
         )
 
     def forward(self, x):
@@ -67,7 +70,7 @@ class Decoder(nn.Module):
         num_hiddens,
         num_upsampling_layers,
         num_residual_layers,
-        num_residual_hiddens,
+        n_channels,
         out,
     ):
         super().__init__()
@@ -79,7 +82,10 @@ class Decoder(nn.Module):
             padding=1,
         )
         self.residual_stack = ResidualStack(
-            num_hiddens, num_residual_layers, num_residual_hiddens
+            n_blocks=num_residual_layers,
+            in_channels=num_hiddens,
+            out_channels=num_hiddens,
+            kernel_size=3,
         )
         upconv = nn.Sequential()
         for upsampling_layer in range(num_upsampling_layers):
