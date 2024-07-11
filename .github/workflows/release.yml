@@ -38,3 +38,6 @@ jobs:
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # api key from github secrets
+          password: ${{ secrets.PYPI_API_TOKEN }}
