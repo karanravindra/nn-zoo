@@ -1,7 +1,8 @@
 # nn-zoo
 
-![GitHub Release](https://img.shields.io/github/v/release/karanravindra/nn-zoo)
-![GitHub License](https://img.shields.io/github/license/karanravindra/nn-zoo)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/nn-zoo)
+![PyPI - Version](https://img.shields.io/pypi/v/nn-zoo)
+![PyPI - License](https://img.shields.io/pypi/l/nn-zoo)
 
 ## Overview
 
