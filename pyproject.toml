@@ -29,5 +29,12 @@ dependencies = [
     "wandb",
 ]
 
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.packages.find]
+include = ["ml_zoo*"]
+exclude = ["assets*", "tests*"]
+
 [project.optional-dependencies]
 dev = ["pytest", "ruff"]
