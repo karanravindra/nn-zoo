@@ -2,13 +2,12 @@ name: PyTest
 
 on:
   push:
-    branches: [ "main" , "dev" ]
+    branches: [ "main", "dev" ]
   pull_request:
-    branches: [ "main" , "dev" ]
+    branches: [ "main", "dev" ]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -16,16 +15,24 @@ jobs:
         python-version: ["3.11", "3.12"]
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install ml-zoo
+
+    - name: Install Dependencies
       run: |
-        git clone https://github.com/karanravindra/ml-zoo.git
-        cd ml-zoo
+        python -m pip install --upgrade pip
         pip install '.[dev]'
+
     - name: Run Tests
       run: |
         pytest
+
+    - name: Log Trigger Info
+      run: |
+        echo "Workflow triggered by ${{ github.event_name }} on ${{ github.ref }}"
+        echo "Event details: ${{ toJson(github.event) }}"
