@@ -1,4 +1,4 @@
-__name__ = "ml_zoo"
+__name__ = "serif_ml"
 __version__ = "0.1.1"
 
 from . import datamodules, models, trainers

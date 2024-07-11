@@ -1,5 +1,5 @@
 import torch
-from ml_zoo.models.components import SelfAttention
+from serif_ml.models.components import SelfAttention
 
 
 def test_self_attention():

@@ -1,5 +1,5 @@
 import torch
-from ml_zoo.models import GPTConfig, GPT
+from serif_ml.models import GPTConfig, GPT
 
 
 def test_gpt():

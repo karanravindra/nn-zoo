@@ -1,4 +1,4 @@
-from ml_zoo.trainers import VQVAE_Trainer
+from serif_ml.trainers import VQVAE_Trainer
 
 
 def vqvae_trainer():

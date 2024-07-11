@@ -1,4 +1,4 @@
-# ml-zoo
+# serif-ml
 
 ![GitHub Release](https://img.shields.io/github/v/release/karanravindra/ml-zoo)
 ![GitHub License](https://img.shields.io/github/license/karanravindra/ml-zoo)
@@ -16,14 +16,10 @@ This repository contains a collection reusable machine learning models and utili
 
 ## Installation
 
-This package is not yet available on PyPI. To install the package, clone the repository and run the following command:
+To install the package, run the following command:
 
 ```bash
-# In the environment you want to install the package
-git clone https://github.com/karanravindra/ml-zoo.git
-cd ml-zoo/src
-pip install .
-cd ../..
+pip install serif-ml
 ```
 
 ## Contributing
@@ -32,11 +28,9 @@ Contributions are welcome! For bug reports or requests please submit an issue.
 To install the package in development mode, run the following command:
 
 ```bash
-# In the environment you want to install the package
 git clone https://github.com/karanravindra/ml-zoo.git
-cd ml-zoo/src
-pip install -e .
-cd ../..
+cd ml-zoo
+pip install -e '.[dev]'
 ```
 
 ## License
