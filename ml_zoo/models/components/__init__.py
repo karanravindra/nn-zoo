@@ -1,11 +1,11 @@
 from .attention import SelfAttention
-from .residual import BasicBlock, BottleNeck, ResidualStack
+from .residual import ResidualBasicBlock, ResidualBottleNeckBlock, ResidualStack
 from .vq import VectorQuantizer
 
 __all__ = [
     "SelfAttention",
-    "BasicBlock",
-    "BottleNeck",
+    "ResidualBasicBlock",
+    "ResidualBottleNeckBlock",
     "ResidualStack",
     "VectorQuantizer",
 ]

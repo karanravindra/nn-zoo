@@ -6,7 +6,7 @@ __all__ = ["SelfAttention"]
 
 
 class SelfAttention(nn.Module):
-    def __init__(self, n_embd: int, n_head: int, attn_dropout: float, **kwargs):
+    def __init__(self, n_embd: int, n_head: int, attn_dropout: float = 0.0):
         super().__init__()
         assert n_embd % n_head == 0
         # key, query, value projections for all heads, but in a batch
