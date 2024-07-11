@@ -5,7 +5,7 @@ import torchvision
 import wandb
 from lightning import pytorch as pl
 
-from serif_ml.models import VQVAE
+from ml_zoo.models import VQVAE
 
 __all__ = ["VQVAE_Trainer"]
 
