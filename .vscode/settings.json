@@ -27,6 +27,7 @@
     ".pytest_cache": true,
     ".ruff_cache": true,
     ".venv": true,
+    "**/__pycache__": true,
     "**/.DS_Store": false,
     "**/.git": false,
     "**/.hg": false,
@@ -45,5 +46,8 @@
     "."
   ],
   "python.testing.unittestEnabled": false,
-  "python.testing.pytestEnabled": true
+  "python.testing.pytestEnabled": true,
+  "editor.fontFamily": "Hacker NF Mono",
+  "editor.renderWhitespace": "trailing",
+  "editor.formatOnSave": true
 }
