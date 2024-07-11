@@ -24,6 +24,8 @@
   "terminal.integrated.enableMultiLinePasteWarning": "never",
   "terminal.integrated.showTerminalConfigPrompt": false,
   "files.exclude": {
+    ".pytest_cache": true,
+    ".ruff_cache": true,
     ".venv": true,
     "**/.DS_Store": false,
     "**/.git": false,
@@ -40,7 +42,7 @@
   "explorer.excludeGitIgnore": false,
   "python.analysis.typeCheckingMode": "standard",
   "python.testing.pytestArgs": [
-    "tests"
+    "."
   ],
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true

@@ -23,7 +23,9 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install ml-zoo
       run: |
-        pip install .
+        git clone https://github.com/karanravindra/ml-zoo.git
+        cd ml-zoo
+        pip install '.[dev]'
     - name: Run Tests
       run: |
         pytest

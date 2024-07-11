@@ -1,6 +1,6 @@
-from .datamodules import CIFARDataModule, MNISTDataModule
-
-__all__ = ["CIFARDataModule", "MNISTDataModule"]
-
 __name__ = "ml_zoo"
-__version__ = "0.1.0"
+__version__ = "0.1.1"
+
+from . import datamodules, models, trainers
+
+__all__ = ["datamodules", "models", "trainers"]
