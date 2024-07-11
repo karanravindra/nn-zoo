@@ -1,5 +1,5 @@
 import torch
-from serif_ml.models import UNet, UNetConfig
+from nn_zoo.models import UNet, UNetConfig
 
 
 def test_unet():

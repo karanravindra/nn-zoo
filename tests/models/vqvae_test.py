@@ -1,5 +1,5 @@
 import torch
-from serif_ml.models import VQVAE
+from nn_zoo.models import VQVAE
 
 
 def test_vqvae():

@@ -5,7 +5,7 @@ import torchvision
 import wandb
 from lightning import pytorch as pl
 
-from ml_zoo.models import VQVAE
+from nn_zoo.models import VQVAE
 
 __all__ = ["VQVAE_Trainer"]
 

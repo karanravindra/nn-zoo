@@ -1,5 +1,5 @@
 import torch
-from serif_ml.models.components import (
+from nn_zoo.models.components import (
     ResidualBasicBlock,
     ResidualBottleNeckBlock,
     ResidualStack,

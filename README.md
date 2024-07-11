@@ -1,7 +1,7 @@
-# serif-ml
+# nn-zoo
 
-![GitHub Release](https://img.shields.io/github/v/release/karanravindra/ml-zoo)
-![GitHub License](https://img.shields.io/github/license/karanravindra/ml-zoo)
+![GitHub Release](https://img.shields.io/github/v/release/karanravindra/nn-zoo)
+![GitHub License](https://img.shields.io/github/license/karanravindra/nn-zoo)
 
 ## Overview
 
@@ -19,7 +19,7 @@ This repository contains a collection reusable machine learning models and utili
 To install the package, run the following command:
 
 ```bash
-pip install serif-ml
+pip install nn-zoo
 ```
 
 ## Contributing
@@ -28,8 +28,8 @@ Contributions are welcome! For bug reports or requests please submit an issue.
 To install the package in development mode, run the following command:
 
 ```bash
-git clone https://github.com/karanravindra/serif-ml.git
-cd serif-ml
+git clone https://github.com/karanravindra/nn-zoo.git
+cd nn-zoo
 pip install -e '.[dev]'
 ```
 

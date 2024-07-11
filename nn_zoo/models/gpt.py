@@ -4,7 +4,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-from ml_zoo.models.components import SelfAttention
+from nn_zoo.models.components import SelfAttention
 
 __all__ = ["GPTConfig", "GPT"]
 

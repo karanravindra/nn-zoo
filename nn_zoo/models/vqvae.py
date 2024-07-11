@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
-from ml_zoo.models.components import VectorQuantizer
-from ml_zoo.models.components import ResidualStack
+from nn_zoo.models.components import VectorQuantizer
+from nn_zoo.models.components import ResidualStack
 
 __all__ = ["VQVAE"]
 
