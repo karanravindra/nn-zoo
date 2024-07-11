@@ -3,7 +3,7 @@ requires = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=6.0.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ml-zoo"
+name = "pyro-ml"
 version = "0.1.1"
 authors = [{ name = "Kara Ravindra", email = "contact@karanravindra.me" }]
 description = "A collection of PyTorch utilities"
@@ -31,7 +31,7 @@ dependencies = [
 include-package-data = false
 
 [tool.setuptools.packages.find]
-include = ["ml_zoo*"]
+include = ["pyro_ml*"]
 exclude = ["assets*", "tests*"]
 
 [project.optional-dependencies]
