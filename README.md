@@ -28,8 +28,8 @@ Contributions are welcome! For bug reports or requests please submit an issue.
 To install the package in development mode, run the following command:
 
 ```bash
-git clone https://github.com/karanravindra/ml-zoo.git
-cd ml-zoo
+git clone https://github.com/karanravindra/serif-ml.git
+cd serif-ml
 pip install -e '.[dev]'
 ```
 
