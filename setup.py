@@ -9,7 +9,7 @@ with codecs.open(os.path.join(here, "README.md"), encoding="utf-8") as fh:
 
 setup(
     name="ml_zoo",
-    version=f'{{ VERSION_PLACEHOLDER }}',
+    version=f"{{ VERSION_PLACEHOLDER }}",
     author="Karan Ravindra",
     author_email="contact@karanravindra.com",
     description="A collection of machine learning utilities and models.",
