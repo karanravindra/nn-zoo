@@ -2,7 +2,7 @@ name: Release to PyPI
 
 on:
   release:
-    - published
+    types: [published]
 
 # .github/workflows/ci-cd.yml
 jobs:
