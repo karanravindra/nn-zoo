@@ -1,9 +1,8 @@
 name: Release to PyPI
 
 on:
-  push:
-    branches:
-      - main
+  release:
+    - published
 
 # .github/workflows/ci-cd.yml
 jobs:
@@ -12,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/ml-zoo
+      url: https://pypi.org/p/nn-zoo
     permissions:
       id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
