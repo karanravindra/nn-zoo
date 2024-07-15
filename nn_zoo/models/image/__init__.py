@@ -1,4 +1,3 @@
-from .unet import UNet
-from .vqvae import VQVAE
+from .cnn import CNN
 
-__all__ = ["UNet", "VQVAE"]
+__all__ = ["CNN"]
