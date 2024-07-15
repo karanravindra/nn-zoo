@@ -67,6 +67,9 @@ class MNISTDataModule(LightningDataModule):
     def num_classes(self):
         return 10
 
+    def class_names(self):
+        return self.source.classes
+
 
 if __name__ == "__main__":
     data_module = MNISTDataModule("data", qmnist=False)

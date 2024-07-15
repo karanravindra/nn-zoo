@@ -67,6 +67,9 @@ class CIFARDataModule(LightningDataModule):
     def num_classes(self):
         return 100 if self.source == datasets.CIFAR100 else 10
 
+    def class_names(self):
+        return self.source.classes
+
 
 if __name__ == "__main__":
     data_module = CIFARDataModule("data", cifar100=False)
