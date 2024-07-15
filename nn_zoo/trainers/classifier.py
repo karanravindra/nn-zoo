@@ -78,13 +78,16 @@ class ClassifierTrainer(LightningModule):
         x, y = batch
 
         out = self.model(x, y)
-        _, loss = out
+        preds, loss = out
 
         self.log("train_loss", loss)
         self.log(
             "train_acc",
             accuracy(
-                out.softmax(1), y, task="multiclass", num_classes=self.dm.num_classes()
+                preds.softmax(1),
+                y,
+                task="multiclass",
+                num_classes=self.dm.num_classes(),
             ),
         )
 
@@ -96,13 +99,16 @@ class ClassifierTrainer(LightningModule):
         x, y = batch
 
         out = self.model(x, y)
-        _, loss = out
+        preds, loss = out
 
         self.log("val_loss", loss)
         self.log(
             "val_acc",
             accuracy(
-                out.softmax(1), y, task="multiclass", num_classes=self.dm.num_classes()
+                preds.softmax(1),
+                y,
+                task="multiclass",
+                num_classes=self.dm.num_classes(),
             ),
         )
 
@@ -119,13 +125,16 @@ class ClassifierTrainer(LightningModule):
         x, y = batch
 
         out = self.model(x, y)
-        _, loss = out
+        preds, loss = out
 
         self.log("test_loss", loss)
         self.log(
             "test_acc",
             accuracy(
-                out.softmax(1), y, task="multiclass", num_classes=self.dm.num_classes()
+                preds.softmax(1),
+                y,
+                task="multiclass",
+                num_classes=self.dm.num_classes(),
             ),
         )
 
