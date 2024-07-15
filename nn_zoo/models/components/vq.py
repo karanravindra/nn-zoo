@@ -111,5 +111,5 @@ class VectorQuantizer(nn.Module):
             quantized_x,
             dictionary_loss,
             commitment_loss,
-            encoding_indices.view(x.shape[0], -1),
+            encoding_indices.view(x.shape[0], *x.shape[2:]),
         )
