@@ -48,7 +48,7 @@ class Block(nn.Module):
     def __init__(self, config: GPTConfig):
         super().__init__()
         self.ln_1 = nn.LayerNorm(config.emb_size)
-        self.attn = SelfAttention(config.emb_size, config.heads, config.attn_dropout)
+        self.attn = SelfAttention(config.emb_size, config.heads, config.heads)
         self.ln_2 = nn.LayerNorm(config.emb_size)
         self.mlp = MLP(config)
 

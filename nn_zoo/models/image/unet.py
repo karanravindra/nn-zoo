@@ -1,16 +1,7 @@
-from dataclasses import dataclass
-
 import torch
 from torch import nn
 
-__all__ = ["UNetConfig", "UNet"]
-
-
-@dataclass
-class UNetConfig:
-    in_channels: int
-    out_channels: int
-    initial_filters: int = 64
+__all__ = ["UNet"]
 
 
 class ConvBlock(nn.Module):
@@ -42,9 +33,9 @@ class UpConvBlock(nn.Module):
 
 
 class UNet(nn.Module):
-    def __init__(self, config: UNetConfig):
+    def __init__(self, **kwargs):
         super().__init__()
-        self.config = config
+        self.config = kwargs.get("config")
 
         self.encoder1 = ConvBlock(config.in_channels, config.initial_filters)
         self.encoder2 = ConvBlock(config.initial_filters, config.initial_filters * 2)

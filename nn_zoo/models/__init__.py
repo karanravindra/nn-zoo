@@ -1,6 +1,5 @@
-from .gpt import GPT, GPTConfig
-from .unet import UNet, UNetConfig
-from .vqvae import VQVAE
+from .image import UNet, VQVAE
+from .sequence import GPT, GPTConfig
 from . import components
 
-__all__ = ["GPT", "GPTConfig", "VQVAE", "UNet", "UNetConfig", "components"]
+__all__ = ["GPT", "GPTConfig", "VQVAE", "UNet", "components"]
