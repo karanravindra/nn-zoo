@@ -138,7 +138,7 @@ class ClassifierTrainer(LightningModule):
             ),
         )
 
-        self.preds.append(out.softmax(1))
+        self.preds.append(preds.softmax(1))
         self.targets.append(y)
 
         return loss
