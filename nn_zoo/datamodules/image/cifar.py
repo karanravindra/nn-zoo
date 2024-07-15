@@ -3,7 +3,7 @@ from lightning import LightningDataModule
 from torchvision import datasets, transforms
 
 
-class MNISTDataModule(LightningDataModule):
+class CIFARDataModule(LightningDataModule):
     def __init__(
         self,
         data_dir: str,
@@ -15,13 +15,13 @@ class MNISTDataModule(LightningDataModule):
             "batch_size": 64,
             "num_workers": 2,
         },
-        qmnist: bool = False,
+        cifar100: bool = False,
     ):
         super().__init__()
         self.data_dir = data_dir
         self.dataset_params = dataset_params
         self.loader_params = loader_params
-        self.source = datasets.QMNIST if qmnist else datasets.MNIST
+        self.source = datasets.CIFAR100 if cifar100 else datasets.CIFAR10
 
         self.transforms = transforms.Compose([self.dataset_params["transform"]])
         self.dataset_params.__delitem__("transform")
@@ -34,7 +34,7 @@ class MNISTDataModule(LightningDataModule):
             data_dir=self.data_dir,
             dataset_params=self.dataset_params,
             loader_params=self.loader_params,
-            qmnist=self.source == datasets.QMNIST,
+            cifar100=self.source == datasets.CIFAR100,
         )
 
     def prepare_data(self):
@@ -64,9 +64,12 @@ class MNISTDataModule(LightningDataModule):
         assert self.test_dataset is not None, f"{self.__class__} not setup properly"
         return DataLoader(self.test_dataset, **self.loader_params)
 
+    def num_classes(self):
+        return 100 if self.source == datasets.CIFAR100 else 10
+
 
 if __name__ == "__main__":
-    data_module = MNISTDataModule("data", qmnist=False)
+    data_module = CIFARDataModule("data", cifar100=False)
     data_module.prepare_data()
     data_module.setup()
     train = data_module.train_dataloader()

@@ -68,6 +68,9 @@ class FFHQDataModule(LightningDataModule):
         assert self.test_dataset is not None, f"{self.__class__} not setup properly"
         return DataLoader(self.test_dataset, **self.loader_params)
 
+    def num_classes(self):
+        return 0
+
 
 if __name__ == "__main__":
     data_module = FFHQDataModule("data")
