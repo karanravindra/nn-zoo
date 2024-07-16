@@ -9,6 +9,7 @@ from .depthwise import (
     DepthwiseSeparableConv2d,
     DepthwiseSeparableConv3d,
 )
+from .pca import PCA
 
 __all__ = [
     "DepthwiseConv1d",
@@ -17,6 +18,7 @@ __all__ = [
     "DepthwiseSeparableConv1d",
     "DepthwiseSeparableConv2d",
     "DepthwiseSeparableConv3d",
+    "PCA",
     "SelfAttention",
     "ResidualBasicBlock",
     "ResidualBottleNeckBlock",

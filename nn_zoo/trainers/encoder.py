@@ -10,6 +10,7 @@ from torchmetrics.functional.image.ssim import (
 )
 import wandb
 import wandb.plot
+from nn_zoo.models.components import PCA
 
 __all__ = ["AutoEncoderTrainer"]
 
@@ -160,8 +161,13 @@ class AutoEncoderTrainer(LightningModule):
         return loss
 
     def on_test_epoch_end(self):
-        self.latents = torch.cat(self.latents)
-        pca = torch.pca_lowrank(self.latents, q=2)
+        self.latents = torch.cat(self.latents).cpu()
+        pca = PCA(n_components=2).fit_transform(self.latents)
+        if pca.shape == (self.latents.shape[0], 2):
+            pca = pca.tolist()
+        else:
+            print("PCA shape is not correct")
+            pca = pca.transpose(0, 1).tolist()
         self.logger.experiment.log(
             {
                 "test/latents": wandb.Table(
