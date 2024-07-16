@@ -105,7 +105,7 @@ class AutoEncoderTrainer(LightningModule):
         if batch_idx == 0:
             self.logger.experiment.log(
                 {
-                    "val/recon_imgs": wandb.Image(
+                    "val/imgs/recon_imgs": wandb.Image(
                         torchvision.utils.make_grid(preds), caption="Predictions"
                     ),
                 }
@@ -114,7 +114,7 @@ class AutoEncoderTrainer(LightningModule):
             if self.current_epoch == 0:
                 self.logger.experiment.log(
                     {
-                        "val/original_imgs": wandb.Image(
+                        "val/imgs/original_imgs": wandb.Image(
                             torchvision.utils.make_grid(x), caption="Original Images"
                         ),
                     }
@@ -134,10 +134,10 @@ class AutoEncoderTrainer(LightningModule):
         self.log("test/psnr", psnr(preds, x))
         self.log("test/ssim", ssim(preds, x))
 
-        if batch_idx % 10 == 0:
+        if batch_idx == 0:
             self.logger.experiment.log(
                 {
-                    "test/recon_imgs": wandb.Image(
+                    "test/imgs/recon_imgs": wandb.Image(
                         torchvision.utils.make_grid(preds), caption="Predictions"
                     ),
                 }
@@ -145,7 +145,7 @@ class AutoEncoderTrainer(LightningModule):
 
             self.logger.experiment.log(
                 {
-                    "test/negative": wandb.Image(
+                    "test/imgs/negative": wandb.Image(
                         torchvision.utils.make_grid((x - preds)), caption="Negative"
                     ),
                 }
