@@ -84,9 +84,9 @@ class AutoEncoderTrainer(LightningModule):
         out = self.model(x, y)
         preds, loss = out
 
-        self.log("train_loss", loss)
-        self.log("train_psnr", psnr(preds, x))
-        self.log("train_ssim", ssim(preds, x))
+        self.log("train/loss", loss)
+        self.log("train/psnr", psnr(preds, x))
+        self.log("train/ssim", ssim(preds, x))
 
         return loss
 
@@ -98,14 +98,14 @@ class AutoEncoderTrainer(LightningModule):
         out = self.model(x, y)
         preds, loss = out
 
-        self.log("val_loss", loss)
-        self.log("val_psnr", psnr(preds, x))
-        self.log("val_ssim", ssim(preds, x))
+        self.log("val/loss", loss)
+        self.log("val/psnr", psnr(preds, x))
+        self.log("val/ssim", ssim(preds, x))
 
         if batch_idx == 0:
             self.logger.experiment.log(
                 {
-                    "recon_imgs": wandb.Image(
+                    "val/recon_imgs": wandb.Image(
                         torchvision.utils.make_grid(preds), caption="Predictions"
                     ),
                 }
@@ -114,7 +114,7 @@ class AutoEncoderTrainer(LightningModule):
             if self.current_epoch == 0:
                 self.logger.experiment.log(
                     {
-                        "original_imgs": wandb.Image(
+                        "val/original_imgs": wandb.Image(
                             torchvision.utils.make_grid(x), caption="Original Images"
                         ),
                     }
@@ -130,14 +130,14 @@ class AutoEncoderTrainer(LightningModule):
         out = self.model(x, y)
         preds, loss = out
 
-        self.log("test_loss", loss)
-        self.log("test_psnr", psnr(preds, x))
-        self.log("test_ssim", ssim(preds, x))
+        self.log("test/loss", loss)
+        self.log("test/psnr", psnr(preds, x))
+        self.log("test/ssim", ssim(preds, x))
 
         if batch_idx % 10 == 0:
             self.logger.experiment.log(
                 {
-                    "recon_imgs": wandb.Image(
+                    "test/recon_imgs": wandb.Image(
                         torchvision.utils.make_grid(preds), caption="Predictions"
                     ),
                 }
@@ -145,7 +145,7 @@ class AutoEncoderTrainer(LightningModule):
 
             self.logger.experiment.log(
                 {
-                    "negative": wandb.Image(
+                    "test/negative": wandb.Image(
                         torchvision.utils.make_grid((x - preds)), caption="Negative"
                     ),
                 }
