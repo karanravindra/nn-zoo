@@ -123,9 +123,6 @@ class AutoEncoderTrainer(LightningModule):
 
         return loss
 
-    def on_test_start(self) -> None:
-        self.latents = []
-
     def test_step(
         self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int
     ) -> torch.Tensor:
@@ -133,9 +130,6 @@ class AutoEncoderTrainer(LightningModule):
 
         out = self.model(x, y)
         preds, loss = out
-
-        latent = self.model.encoder(x)
-        self.latents.append(latent)
 
         self.log("test/loss", loss)
         self.log("test/psnr", psnr(preds, x))
@@ -159,23 +153,6 @@ class AutoEncoderTrainer(LightningModule):
             )
 
         return loss
-
-    def on_test_epoch_end(self):
-        self.latents = torch.cat(self.latents).cpu()
-        pca = PCA(n_components=2).fit_transform(self.latents)
-        if pca.shape == (self.latents.shape[0], 2):
-            pca = pca.tolist()
-        else:
-            print("PCA shape is not correct")
-            pca = pca.transpose(0, 1).tolist()
-        self.logger.experiment.log(
-            {
-                "test/latents": wandb.Table(
-                    data=pca,
-                    columns=["x", "y"],
-                ),
-            }
-        )
 
     def configure_optimizers(self):
         optimizer = self.optim(self.model.parameters(), **self.optim_kwargs)
