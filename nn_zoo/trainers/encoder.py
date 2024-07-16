@@ -159,7 +159,7 @@ class AutoEncoderTrainer(LightningModule):
 
         return loss
 
-    def on_test_epoch_end(self, outputs):
+    def on_test_epoch_end(self):
         self.latents = torch.cat(self.latents)
         pca = torch.pca_lowrank(self.latents, q=2)
         self.logger.experiment.log(
