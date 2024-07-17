@@ -82,7 +82,7 @@ class AutoEncoderTrainer(LightningModule):
     ) -> torch.Tensor:
         x, y = batch
 
-        preds = self.model(x, x)
+        preds = self.model(x)
         loss = self.model.loss(preds, x)
 
         self.log("train/loss", loss)
@@ -96,7 +96,7 @@ class AutoEncoderTrainer(LightningModule):
     ) -> torch.Tensor:
         x, y = batch
 
-        preds = self.model(x, x)
+        preds = self.model(x)
         loss = self.model.loss(preds, x)
 
         self.log("val/loss", loss)
@@ -128,7 +128,7 @@ class AutoEncoderTrainer(LightningModule):
     ) -> torch.Tensor:
         x, y = batch
 
-        preds = self.model(x, x)
+        preds = self.model(x)
         loss = self.model.loss(preds, x)
 
         self.log("test/loss", loss)
