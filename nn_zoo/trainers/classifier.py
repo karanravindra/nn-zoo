@@ -5,6 +5,7 @@ from lightning.pytorch import LightningModule
 import torch.optim.optimizer
 from torchmetrics.functional.classification import accuracy
 import wandb
+import wandb.plot
 
 __all__ = ["ClassifierTrainer"]
 
@@ -149,7 +150,7 @@ class ClassifierTrainer(LightningModule):
         self.log(
             "test_confusion_matrix",
             wandb.plot.confusion_matrix(
-                preds=out.argmax(1).tolist(),
+                preds=out.tolist(),
                 y_true=y.tolist(),
                 class_names=self.dm.class_names(),
                 title="Confusion Matrix",
