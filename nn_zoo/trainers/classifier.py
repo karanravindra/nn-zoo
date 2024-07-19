@@ -76,8 +76,8 @@ class ClassifierTrainer(LightningModule):
     ) -> torch.Tensor:
         x, y = batch
 
-        out = self.model(x, y)
-        preds, loss = out
+        preds = self.model(x, y)
+        loss = self.model.loss(preds, y)
 
         self.log("train_loss", loss)
         self.log(
@@ -97,8 +97,8 @@ class ClassifierTrainer(LightningModule):
     ) -> torch.Tensor:
         x, y = batch
 
-        out = self.model(x, y)
-        preds, loss = out
+        preds = self.model(x, y)
+        loss = self.model.loss(preds, y)
 
         self.log("val_loss", loss)
         self.log(
@@ -123,8 +123,8 @@ class ClassifierTrainer(LightningModule):
     ) -> torch.Tensor:
         x, y = batch
 
-        out = self.model(x, y)
-        preds, loss = out
+        preds = self.model(x, y)
+        loss = self.model.loss(preds, y)
 
         self.log("test_loss", loss)
         self.log(
