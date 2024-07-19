@@ -5,7 +5,6 @@ from lightning.pytorch import LightningModule
 import torch.optim.optimizer
 from torchmetrics.functional.classification import accuracy
 import wandb
-import wandb.plot
 
 __all__ = ["ClassifierTrainer"]
 
@@ -69,8 +68,8 @@ class ClassifierTrainer(LightningModule):
         self.scheduler = get_scheduler(scheduler) if scheduler else None
         self.scheduler_kwargs = scheduler_args if scheduler else None
 
-    def forward(self, x):
-        return self.model(x).output
+    def forward(self, *args, **kwargs):
+        return self.model(*args, **kwargs)
 
     def training_step(
         self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int

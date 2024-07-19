@@ -9,8 +9,6 @@ from torchmetrics.functional.image.ssim import (
     structural_similarity_index_measure as ssim,
 )
 import wandb
-import wandb.plot
-from nn_zoo.models.components import PCA
 
 __all__ = ["AutoEncoderTrainer"]
 
