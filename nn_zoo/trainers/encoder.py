@@ -9,6 +9,7 @@ from torchmetrics.functional.image.ssim import (
     structural_similarity_index_measure as ssim,
 )
 import wandb
+from PIL import Image
 
 __all__ = ["AutoEncoderTrainer"]
 
@@ -105,7 +106,12 @@ class AutoEncoderTrainer(LightningModule):
             self.logger.experiment.log(
                 {
                     "val/imgs/recon_imgs": wandb.Image(
-                        torchvision.utils.make_grid(preds), caption="Predictions"
+                        Image.fromarray(
+                            torchvision.utils.make_grid(preds)
+                            .numpy()
+                            .transpose(1, 2, 0)
+                        ),
+                        caption="Predictions",
                     ),
                 }
             )
@@ -114,7 +120,12 @@ class AutoEncoderTrainer(LightningModule):
                 self.logger.experiment.log(
                     {
                         "val/imgs/original_imgs": wandb.Image(
-                            torchvision.utils.make_grid(x), caption="Original Images"
+                            Image.fromarray(
+                                torchvision.utils.make_grid(x)
+                                .numpy()
+                                .transpose(1, 2, 0)
+                            ),
+                            caption="Original Images",
                         ),
                     }
                 )
@@ -137,7 +148,12 @@ class AutoEncoderTrainer(LightningModule):
             self.logger.experiment.log(
                 {
                     "test/imgs/recon_imgs": wandb.Image(
-                        torchvision.utils.make_grid(preds), caption="Predictions"
+                        Image.fromarray(
+                            torchvision.utils.make_grid(preds)
+                            .numpy()
+                            .transpose(1, 2, 0)
+                        ),
+                        caption="Predictions",
                     ),
                 }
             )
@@ -145,7 +161,12 @@ class AutoEncoderTrainer(LightningModule):
             self.logger.experiment.log(
                 {
                     "test/imgs/negative": wandb.Image(
-                        torchvision.utils.make_grid((x - preds)), caption="Negative"
+                        Image.fromarray(
+                            torchvision.utils.make_grid((x - preds))
+                            .numpy()
+                            .transpose(1, 2, 0)
+                        ),
+                        caption="Negative",
                     ),
                 }
             )
