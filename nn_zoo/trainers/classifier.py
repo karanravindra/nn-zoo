@@ -114,11 +114,6 @@ class ClassifierTrainer(LightningModule):
 
         return loss
 
-    def on_test_start(self) -> None:
-        # save preds and targets
-        self.preds = []
-        self.targets = []
-
     def test_step(
         self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int
     ) -> torch.Tensor:
@@ -138,24 +133,7 @@ class ClassifierTrainer(LightningModule):
             ),
         )
 
-        self.preds.append(preds.softmax(1))
-        self.targets.append(y)
-
         return loss
-
-    def on_test_end(self) -> None:
-        out = torch.cat(self.preds)
-        y = torch.cat(self.targets)
-
-        self.log(
-            "test_confusion_matrix",
-            wandb.plot.confusion_matrix(
-                preds=out.tolist(),
-                y_true=y.tolist(),
-                class_names=self.dm.class_names(),
-                title="Confusion Matrix",
-            ),
-        )
 
     def configure_optimizers(self):
         optimizer = self.optim(self.model.parameters(), **self.optim_kwargs)
