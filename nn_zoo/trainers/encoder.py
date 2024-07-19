@@ -108,6 +108,7 @@ class AutoEncoderTrainer(LightningModule):
                     "val/imgs/recon_imgs": wandb.Image(
                         Image.fromarray(
                             torchvision.utils.make_grid(preds)
+                            .cpu()
                             .numpy()
                             .transpose(1, 2, 0)
                         ),
@@ -122,6 +123,7 @@ class AutoEncoderTrainer(LightningModule):
                         "val/imgs/original_imgs": wandb.Image(
                             Image.fromarray(
                                 torchvision.utils.make_grid(x)
+                                .cpu()
                                 .numpy()
                                 .transpose(1, 2, 0)
                             ),
@@ -150,6 +152,7 @@ class AutoEncoderTrainer(LightningModule):
                     "test/imgs/recon_imgs": wandb.Image(
                         Image.fromarray(
                             torchvision.utils.make_grid(preds)
+                            .cpu()
                             .numpy()
                             .transpose(1, 2, 0)
                         ),
@@ -163,6 +166,7 @@ class AutoEncoderTrainer(LightningModule):
                     "test/imgs/negative": wandb.Image(
                         Image.fromarray(
                             torchvision.utils.make_grid((x - preds))
+                            .cpu()
                             .numpy()
                             .transpose(1, 2, 0)
                         ),
