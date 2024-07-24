@@ -82,13 +82,14 @@ class AutoEncoderTrainer(LightningModule):
         x, y = batch
 
         preds = self.model(x)
-        loss = self.model.loss(preds, x)
+        metrics = self.model.loss(preds, x)
 
-        self.log("train/loss", loss)
+        self.log("train/loss", metrics['loss'])
+        self.log("train/lpips", metrics['lpips'])
         self.log("train/psnr", psnr(preds, x))
         self.log("train/ssim", ssim(preds, x))
 
-        return loss
+        return metrics['loss']
 
     def validation_step(
         self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int
@@ -96,9 +97,10 @@ class AutoEncoderTrainer(LightningModule):
         x, y = batch
 
         preds = self.model(x)
-        loss = self.model.loss(preds, x)
+        metrics = self.model.loss(preds, x)
 
-        self.log("val/loss", loss)
+        self.log("val/loss", metrics['loss'])
+        self.log("val/lpips", metrics['lpips'])
         self.log("val/psnr", psnr(preds, x))
         self.log("val/ssim", ssim(preds, x))
 
@@ -122,7 +124,7 @@ class AutoEncoderTrainer(LightningModule):
                     }
                 )
 
-        return loss
+        return metrics['loss']
 
     def test_step(
         self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int
@@ -130,9 +132,10 @@ class AutoEncoderTrainer(LightningModule):
         x, y = batch
 
         preds = self.model(x)
-        loss = self.model.loss(preds, x)
+        metrics = self.model.loss(preds, x)
 
-        self.log("test/loss", loss)
+        self.log("test/loss", metrics['loss'])
+        self.log("test/lpips", metrics['lpips'])
         self.log("test/psnr", psnr(preds, x))
         self.log("test/ssim", ssim(preds, x))
 
@@ -155,7 +158,7 @@ class AutoEncoderTrainer(LightningModule):
                 }
             )
 
-        return loss
+        return metrics['loss']
 
     def configure_optimizers(self):
         optimizer = self.optim(self.model.parameters(), **self.optim_kwargs)
