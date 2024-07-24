@@ -29,7 +29,6 @@ def get_optim(
                 f"The requested optimizer: {optim} is not availible"
             )
 
-
 def get_scheduler(
     scheduler: str,
 ) -> type[
@@ -53,7 +52,6 @@ def get_scheduler(
             raise NotImplementedError(
                 f"The requested scheduler: {scheduler} is not availible"
             )
-
 
 class AutoEncoderTrainer(LightningModule):
     def __init__(
@@ -84,10 +82,8 @@ class AutoEncoderTrainer(LightningModule):
         preds = self.model(x)
         metrics = self.model.loss(preds, x)
 
-        self.log("train/loss", metrics['loss'])
-        self.log("train/lpips", metrics['lpips'])
-        self.log("train/psnr", psnr(preds, x))
-        self.log("train/ssim", ssim(preds, x))
+        for key, value in metrics.items():
+            self.log(f"train/{key}", value)
 
         return metrics['loss']
 
@@ -99,10 +95,8 @@ class AutoEncoderTrainer(LightningModule):
         preds = self.model(x)
         metrics = self.model.loss(preds, x)
 
-        self.log("val/loss", metrics['loss'])
-        self.log("val/lpips", metrics['lpips'])
-        self.log("val/psnr", psnr(preds, x))
-        self.log("val/ssim", ssim(preds, x))
+        for key, value in metrics.items():
+            self.log(f"val/{key}", value)
 
         if batch_idx == 0:
             self.logger.experiment.log(
@@ -134,10 +128,8 @@ class AutoEncoderTrainer(LightningModule):
         preds = self.model(x)
         metrics = self.model.loss(preds, x)
 
-        self.log("test/loss", metrics['loss'])
-        self.log("test/lpips", metrics['lpips'])
-        self.log("test/psnr", psnr(preds, x))
-        self.log("test/ssim", ssim(preds, x))
+        for key, value in metrics.items():
+            self.log(f"test/{key}", value)
 
         if batch_idx == 0:
             self.logger.experiment.log(
