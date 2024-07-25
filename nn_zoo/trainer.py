@@ -2,8 +2,10 @@ from typing import Any
 
 import torch
 import tqdm
-from datamodules.datamodule import DataModule
+
 from model import Model
+from logger import WandbLogger
+from datamodules.datamodule import DataModule
 from _utils import get_device, get_optimizer, get_scheduler
 
 
@@ -13,7 +15,7 @@ class Trainer:
         model: Model,
         dm: DataModule,
         num_epochs: int,
-        logger: Any = None,  # TODO: Add logger
+        log: bool = False,
         optim: str = "adam",
         optim_args: dict[str, Any] = {},
         sch: str | None = None,
@@ -32,6 +34,15 @@ class Trainer:
         self.scheduler = (
             get_scheduler(sch)(self.optimizer, **sch_args)
             if sch and sch_args is not None
+            else None
+        )
+        self.logger = (
+            WandbLogger(
+                project_name="nn_zoo",
+                run_name="default",
+                config={"model": model.__class, "dm": dm.__class},
+            )
+            if log
             else None
         )
 
@@ -82,6 +93,10 @@ class Trainer:
 
     def load(self) -> None:
         pass
+
+    def log(self, name: str, value: Any) -> None:
+        if self.logger is not None:
+            self.logger.log({name: value})
 
     def train_step(self, batch, batch_idx: int) -> torch.Tensor:
         x, y = batch
