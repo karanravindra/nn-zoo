@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "nn-zoo"
 version = "2.0.0-alpha.0"
-authors = [{ name = "Kara Ravindra", email = "contact@karanravindra.me" }]
+authors = [{ name = "Karan Ravindra", email = "contact@karanravindra.me" }]
 description = "A collection of PyTorch utilities"
 readme = "README.md"
 requires-python = ">=3.10"
