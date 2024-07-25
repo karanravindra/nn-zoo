@@ -1,18 +1,20 @@
 from torch.utils.data import DataLoader
-from lightning import LightningDataModule
 from torchvision import datasets, transforms
 
+from nn_zoo.datamodules import DataModule
 
-class MNISTDataModule(LightningDataModule):
+
+class MNISTDataModule(DataModule):
+    source: type[datasets.MNIST] | type[datasets.QMNIST]
+
     def __init__(
         self,
         data_dir: str,
         dataset_params: dict = {
-            "download": True,
-            "transform": transforms.ToTensor(),
+            "transform": [transforms.ToTensor()],
         },
         loader_params: dict = {
-            "batch_size": 64,
+            "batch_size": 128,
             "num_workers": 2,
         },
         qmnist: bool = False,
@@ -21,13 +23,10 @@ class MNISTDataModule(LightningDataModule):
         self.data_dir = data_dir
         self.dataset_params = dataset_params
         self.loader_params = loader_params
-        self.source = datasets.QMNIST if qmnist else datasets.MNIST
+        self.source = datasets.QMNIST if qmnist else datasets.MNIST  # type: ignore
 
-        self.transforms = transforms.Compose([self.dataset_params["transform"]])
+        self.transforms = transforms.Compose(self.dataset_params["transform"])
         self.dataset_params.__delitem__("transform")
-
-    def __repr__(self) -> str:
-        return f"{self.source.__name__}DataModule({self.data_dir})"
 
     def config(self) -> dict:
         return dict(
@@ -38,23 +37,31 @@ class MNISTDataModule(LightningDataModule):
         )
 
     def prepare_data(self):
-        self.source(self.data_dir, train=True, download=True)
-        self.source(self.data_dir, train=False, download=True)
-
-    def setup(self, stage=None):
         self.train_dataset = self.source(
-            self.data_dir, train=True, **self.dataset_params, transform=self.transforms
+            self.data_dir,
+            train=True,
+            download=True,
+            transform=self.transforms,
+            **self.dataset_params,
         )
         self.val_dataset = self.source(
-            self.data_dir, train=False, **self.dataset_params, transform=self.transforms
+            self.data_dir,
+            train=False,
+            download=True,
+            transform=self.transforms,
+            **self.dataset_params,
         )
         self.test_dataset = self.source(
-            self.data_dir, train=False, **self.dataset_params, transform=self.transforms
+            self.data_dir,
+            train=False,
+            download=False,
+            transform=self.transforms,
+            **self.dataset_params,
         )
 
     def train_dataloader(self):
         assert self.train_dataset is not None, f"{self.__class__} not setup properly"
-        return DataLoader(self.train_dataset, **self.loader_params)
+        return DataLoader(self.train_dataset, shuffle=True, **self.loader_params)
 
     def val_dataloader(self):
         assert self.val_dataset is not None, f"{self.__class__} not setup properly"
@@ -64,11 +71,16 @@ class MNISTDataModule(LightningDataModule):
         assert self.test_dataset is not None, f"{self.__class__} not setup properly"
         return DataLoader(self.test_dataset, **self.loader_params)
 
+    def num_classes(self):
+        return 10
+
+    def class_names(self):
+        return self.source.classes
+
 
 if __name__ == "__main__":
     data_module = MNISTDataModule("data", qmnist=False)
     data_module.prepare_data()
-    data_module.setup()
     train = data_module.train_dataloader()
     val = data_module.val_dataloader()
     test = data_module.test_dataloader()

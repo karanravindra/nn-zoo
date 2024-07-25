@@ -1,6 +1,6 @@
-__name__ = "nn_zoo"
-__version__ = "1.0.2"
+import tomllib
 
-from . import datamodules, models, trainers
+with open("pyproject.toml", "rb") as f:
+    pyproject = tomllib.load(f)
 
-__all__ = ["datamodules", "models", "trainers"]
+__version__ = pyproject["project"]["version"]
