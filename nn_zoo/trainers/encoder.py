@@ -10,48 +10,10 @@ from torchmetrics.functional.image.ssim import (
 )
 import wandb
 from torchvision.transforms.v2 import ToPILImage
+from nn_zoo.trainers.utils import get_optim, get_scheduler
 
 __all__ = ["AutoEncoderTrainer"]
 
-
-def get_optim(
-    optim: str,
-) -> type[torch.optim.SGD | torch.optim.Adam | torch.optim.AdamW]:
-    match optim.lower():
-        case "sgd":
-            return torch.optim.SGD
-        case "adam":
-            return torch.optim.Adam
-        case "adamw":
-            return torch.optim.AdamW
-        case _:
-            raise NotImplementedError(
-                f"The requested optimizer: {optim} is not availible"
-            )
-
-def get_scheduler(
-    scheduler: str,
-) -> type[
-    torch.optim.lr_scheduler.StepLR
-    | torch.optim.lr_scheduler.MultiStepLR
-    | torch.optim.lr_scheduler.ExponentialLR
-    | torch.optim.lr_scheduler.CosineAnnealingLR
-]:
-    match scheduler.lower():
-        case "steplr":
-            return torch.optim.lr_scheduler.StepLR
-        case "multisteplr":
-            return torch.optim.lr_scheduler.MultiStepLR
-        case "exponentiallr":
-            return torch.optim.lr_scheduler.ExponentialLR
-        case "cosinelr":
-            return torch.optim.lr_scheduler.CosineAnnealingLR
-        case None:
-            return None
-        case _:
-            raise NotImplementedError(
-                f"The requested scheduler: {scheduler} is not availible"
-            )
 
 class AutoEncoderTrainer(LightningModule):
     def __init__(
@@ -85,7 +47,7 @@ class AutoEncoderTrainer(LightningModule):
         for key, value in metrics.items():
             self.log(f"train/{key}", value)
 
-        return metrics['loss']
+        return metrics["loss"]
 
     def validation_step(
         self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int
@@ -118,7 +80,7 @@ class AutoEncoderTrainer(LightningModule):
                     }
                 )
 
-        return metrics['loss']
+        return metrics["loss"]
 
     def test_step(
         self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int
@@ -150,7 +112,7 @@ class AutoEncoderTrainer(LightningModule):
                 }
             )
 
-        return metrics['loss']
+        return metrics["loss"]
 
     def configure_optimizers(self):
         optimizer = self.optim(self.model.parameters(), **self.optim_kwargs)
