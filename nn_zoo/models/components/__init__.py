@@ -9,7 +9,6 @@ from .depthwise import (
     DepthwiseSeparableConv2d,
     DepthwiseSeparableConv3d,
 )
-from .pca import PCA
 
 __all__ = [
     "DepthwiseConv1d",

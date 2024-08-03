@@ -3,7 +3,7 @@ import torch
 
 def get_optim(
     optim: str,
-) -> type[torch.optim.optimizer.Optimizer]:  # TODO: Add all the optimizer types
+) -> type[torch.optim.Optimizer]:  # TODO: Add all the optimizer types
     """A function to get the optimizer class from the string
     Supports all the optimizers availible in PyTorch
 
