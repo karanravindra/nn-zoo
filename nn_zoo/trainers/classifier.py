@@ -1,54 +1,13 @@
 import torch
 import torch.nn as nn
+
 from lightning import LightningDataModule
 from lightning.pytorch import LightningModule
-import torch.optim.optimizer
 from torchmetrics.functional.classification import accuracy
-import wandb
-import wandb.plot
+
+from nn_zoo.trainers.utils import get_optim, get_scheduler
 
 __all__ = ["ClassifierTrainer"]
-
-
-def get_optim(
-    optim: str,
-) -> type[torch.optim.SGD | torch.optim.Adam | torch.optim.AdamW]:
-    match optim.lower():
-        case "sgd":
-            return torch.optim.SGD
-        case "adam":
-            return torch.optim.Adam
-        case "adamw":
-            return torch.optim.AdamW
-        case _:
-            raise NotImplementedError(
-                f"The requested optimizer: {optim} is not availible"
-            )
-
-
-def get_scheduler(
-    scheduler: str,
-) -> type[
-    torch.optim.lr_scheduler.StepLR
-    | torch.optim.lr_scheduler.MultiStepLR
-    | torch.optim.lr_scheduler.ExponentialLR
-    | torch.optim.lr_scheduler.CosineAnnealingLR
-]:
-    match scheduler.lower():
-        case "steplr":
-            return torch.optim.lr_scheduler.StepLR
-        case "multisteplr":
-            return torch.optim.lr_scheduler.MultiStepLR
-        case "exponentiallr":
-            return torch.optim.lr_scheduler.ExponentialLR
-        case "cosinelr":
-            return torch.optim.lr_scheduler.CosineAnnealingLR
-        case None:
-            return None
-        case _:
-            raise NotImplementedError(
-                f"The requested scheduler: {scheduler} is not availible"
-            )
 
 
 class ClassifierTrainer(LightningModule):
@@ -69,16 +28,16 @@ class ClassifierTrainer(LightningModule):
         self.scheduler = get_scheduler(scheduler) if scheduler else None
         self.scheduler_kwargs = scheduler_args if scheduler else None
 
-    def forward(self, x):
-        return self.model(x).output
+    def forward(self, *args, **kwargs):
+        return self.model(*args, **kwargs)
 
     def training_step(
         self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int
     ) -> torch.Tensor:
         x, y = batch
 
-        out = self.model(x, y)
-        preds, loss = out
+        preds = self.model(x, y)
+        loss = self.model.loss(preds, y)
 
         self.log("train_loss", loss)
         self.log(
@@ -98,8 +57,8 @@ class ClassifierTrainer(LightningModule):
     ) -> torch.Tensor:
         x, y = batch
 
-        out = self.model(x, y)
-        preds, loss = out
+        preds = self.model(x, y)
+        loss = self.model.loss(preds, y)
 
         self.log("val_loss", loss)
         self.log(
@@ -114,18 +73,13 @@ class ClassifierTrainer(LightningModule):
 
         return loss
 
-    def on_test_start(self) -> None:
-        # save preds and targets
-        self.preds = []
-        self.targets = []
-
     def test_step(
         self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int
     ) -> torch.Tensor:
         x, y = batch
 
-        out = self.model(x, y)
-        preds, loss = out
+        preds = self.model(x, y)
+        loss = self.model.loss(preds, y)
 
         self.log("test_loss", loss)
         self.log(
@@ -138,24 +92,7 @@ class ClassifierTrainer(LightningModule):
             ),
         )
 
-        self.preds.append(out.softmax(1))
-        self.targets.append(y)
-
         return loss
-
-    def on_test_end(self) -> None:
-        out = torch.cat(self.preds)
-        y = torch.cat(self.targets)
-
-        self.log(
-            "test_confusion_matrix",
-            wandb.plot.confusion_matrix(
-                preds=out.argmax(1).tolist(),
-                y_true=y.tolist(),
-                class_names=self.dm.class_names(),
-                title="Confusion Matrix",
-            ),
-        )
 
     def configure_optimizers(self):
         optimizer = self.optim(self.model.parameters(), **self.optim_kwargs)

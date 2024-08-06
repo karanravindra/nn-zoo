@@ -58,7 +58,7 @@ class FFHQDataModule(LightningDataModule):
 
     def train_dataloader(self):
         assert self.train_dataset is not None, f"{self.__class__} not setup properly"
-        return DataLoader(self.train_dataset, **self.loader_params)
+        return DataLoader(self.train_dataset, shuffle=True, **self.loader_params)
 
     def val_dataloader(self):
         assert self.val_dataset is not None, f"{self.__class__} not setup properly"

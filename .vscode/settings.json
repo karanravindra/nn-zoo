@@ -26,7 +26,6 @@
   "files.exclude": {
     ".pytest_cache": true,
     ".ruff_cache": true,
-    ".venv": true,
     "**/__pycache__": true,
     "**/.DS_Store": false,
     "**/.git": false,
@@ -49,5 +48,8 @@
   "python.testing.pytestEnabled": true,
   "editor.fontFamily": "Hacker NF Mono",
   "editor.renderWhitespace": "trailing",
-  "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "evenBetterToml.formatter.reorderArrays": false,
+  "evenBetterToml.formatter.reorderKeys": false,
+  "evenBetterToml.formatter.trailingNewline": true
 }

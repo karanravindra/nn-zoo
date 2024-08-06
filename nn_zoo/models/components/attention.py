@@ -6,7 +6,9 @@ __all__ = ["SelfAttention"]
 
 
 class SelfAttention(nn.Module):
-    def __init__(self, n_embd: int, n_head: int, attn_dropout: float = 0.0):
+    def __init__(
+        self, n_embd: int, n_head: int, attn_dropout: float = 0.0, is_causal=True
+    ):
         super().__init__()
         assert n_embd % n_head == 0
         # key, query, value projections for all heads, but in a batch
@@ -17,8 +19,9 @@ class SelfAttention(nn.Module):
         self.n_head = n_head
         self.n_embd = n_embd
         self.attn_dropout = attn_dropout
+        self.is_causal = is_causal
 
-    def forward(self, x, is_causal=True) -> torch.Tensor:
+    def forward(self, x) -> torch.Tensor:
         B, T, C = x.size()
 
         qkv = self.c_attn(x)
@@ -31,7 +34,7 @@ class SelfAttention(nn.Module):
 
         y = (
             F.scaled_dot_product_attention(
-                q, k, v, is_causal=is_causal, dropout_p=self.attn_dropout
+                q, k, v, is_causal=self.is_causal, dropout_p=self.attn_dropout
             )
             .transpose(1, 2)
             .contiguous()

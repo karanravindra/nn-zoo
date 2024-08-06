@@ -17,6 +17,6 @@ def test_non_causal_self_attention():
     x = torch.randn(B, T, C)
 
     attn = SelfAttention(C, 8)
-    output = attn(x, is_causal=False)
+    output = attn(x)
 
     assert output.shape == x.shape

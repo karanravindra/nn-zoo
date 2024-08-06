@@ -1,4 +1,3 @@
-from .image import CNN
 from . import components
 
-__all__ = ["CNN", "components"]
+__all__ = ["components"]
