@@ -32,7 +32,7 @@ To install the package in development mode, run the following command:
 ```bash
 git clone https://github.com/karanravindra/nn-zoo.git
 cd nn-zoo
-pip install -e '.[dev]'
+pip install -r dev-requirements.txt
 ```
 
 ## License
