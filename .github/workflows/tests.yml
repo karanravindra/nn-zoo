@@ -31,6 +31,6 @@ jobs:
 
       - name: Run Ruff
         run: |
-          ruff check
+          ruff check --fix
           ruff format
           ruff clean

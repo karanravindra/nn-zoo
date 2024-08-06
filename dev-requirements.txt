@@ -1,0 +1,4 @@
+autocommit @ git+https://github.com/karanravindra/autocommit@main
+pytest
+ruff
+
