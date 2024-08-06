@@ -54,7 +54,7 @@ class CIFARDataModule(LightningDataModule):
 
     def train_dataloader(self):
         assert self.train_dataset is not None, f"{self.__class__} not setup properly"
-        return DataLoader(self.train_dataset, **self.loader_params)
+        return DataLoader(self.train_dataset, shuffle=True, **self.loader_params)
 
     def val_dataloader(self):
         assert self.val_dataset is not None, f"{self.__class__} not setup properly"
@@ -63,6 +63,12 @@ class CIFARDataModule(LightningDataModule):
     def test_dataloader(self):
         assert self.test_dataset is not None, f"{self.__class__} not setup properly"
         return DataLoader(self.test_dataset, **self.loader_params)
+
+    def num_classes(self):
+        return 100 if self.source == datasets.CIFAR100 else 10
+
+    def class_names(self):
+        return self.source.classes
 
 
 if __name__ == "__main__":

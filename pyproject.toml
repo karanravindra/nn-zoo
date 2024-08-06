@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nn-zoo"
-version = "1.0.2"
-authors = [{ name = "Kara Ravindra", email = "contact@karanravindra.me" }]
+version = "1.1.0"
+authors = [{ name = "Karan Ravindra", email = "contact@karanravindra.me" }]
 description = "A collection of PyTorch utilities"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -17,15 +17,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.10",
 ]
-dependencies = [
-    "torch",
-    "torchvision",
-    "lightning",
-    "torchvision",
-    "lightning",
-    "einops",
-    "wandb",
-]
+dependencies = ["torch", "torchvision", "lightning", "wandb", "torchinfo"]
 
 [tool.setuptools]
 include-package-data = false

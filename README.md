@@ -3,6 +3,7 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/nn-zoo)
 ![PyPI - Version](https://img.shields.io/pypi/v/nn-zoo)
 ![PyPI - License](https://img.shields.io/pypi/l/nn-zoo)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/nn-zoo)
 
 ## Overview
 

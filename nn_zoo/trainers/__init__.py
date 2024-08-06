@@ -1,3 +1,5 @@
-from .vqvae_trainer import VQVAE_Trainer
+from .classifier import ClassifierTrainer
+from .encoder import AutoEncoderTrainer
+from .encodergan import EncoderGANTrainer
 
-__all__ = ["VQVAE_Trainer"]
+__all__ = ["ClassifierTrainer", "AutoEncoderTrainer"]

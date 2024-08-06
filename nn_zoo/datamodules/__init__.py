@@ -1,4 +1,3 @@
-from .cifar import CIFARDataModule
-from .mnist import MNISTDataModule
+from .image import CIFARDataModule, MNISTDataModule
 
 __all__ = ["CIFARDataModule", "MNISTDataModule"]
