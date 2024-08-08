@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=6.0.1"]
+requires = ["setuptools>=61", "wheel", "setuptools_scm[toml]>=6.0.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "nn-zoo"
-version = "1.1.0"
+dynamic = ["version"]
 authors = [{ name = "Karan Ravindra", email = "contact@karanravindra.me" }]
 description = "A collection of PyTorch utilities"
 readme = "README.md"
@@ -15,12 +15,15 @@ classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
 ]
 dependencies = ["torch", "torchvision", "lightning", "wandb", "torchinfo"]
 
 [tool.setuptools]
 include-package-data = false
+
+[tool.setuptools.dynamic]
+version = {attr = "package.__version__"}
 
 [tool.setuptools.packages.find]
 include = ["nn_zoo*"]
@@ -28,4 +31,4 @@ exclude = ["assets*", "tests*"]
 
 [project.optional-dependencies]
 dev = ["pytest", "ruff"]
-publish = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=6.0.1", "build"]
+publish = ["setuptools>=61", "wheel", "setuptools_scm[toml]>=6.0.1", "build"]
