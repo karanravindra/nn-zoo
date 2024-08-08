@@ -4,10 +4,6 @@ import torchvision
 from lightning import LightningDataModule
 from lightning.pytorch import LightningModule
 import torch.optim.optimizer
-from torchmetrics.functional.image.psnr import peak_signal_noise_ratio as psnr
-from torchmetrics.functional.image.ssim import (
-    structural_similarity_index_measure as ssim,
-)
 import wandb
 from torchvision.transforms.v2 import ToPILImage
 from nn_zoo.trainers.utils import get_optim, get_scheduler
