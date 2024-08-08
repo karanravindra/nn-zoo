@@ -17,7 +17,6 @@ __all__ = [
     "DepthwiseSeparableConv1d",
     "DepthwiseSeparableConv2d",
     "DepthwiseSeparableConv3d",
-    "PCA",
     "SelfAttention",
     "ResidualBasicBlock",
     "ResidualBottleNeckBlock",
